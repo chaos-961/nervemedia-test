@@ -1406,6 +1406,7 @@
     let svcPinHeight = 0;
     let servicesPinTop = 0;
     let heroHeight = 1;
+    let heroTop = 0;
     let fxMaxScroll = 1;
     let manifestoTop = 0;
     let manifestoHeight = 0;
@@ -1437,7 +1438,11 @@
         svcPinHeight = servicesGeom.height;
         servicesPinTop = servicesGeom.top;
       }
-      if (hero) heroHeight = measureElement(hero).height;
+      if (hero) {
+        const heroGeom = measureElement(hero);
+        heroTop = heroGeom.top;
+        heroHeight = heroGeom.height;
+      }
       if (manifesto) {
         const manifestoGeom = measureElement(manifesto);
         manifestoTop = manifestoGeom.top;
@@ -1514,7 +1519,7 @@
 
       if (updateLayout) {
         if (hero) {
-          const heroP = clamp(scrollY / Math.max(1, (heroHeight * 0.85) / motionPower), 0, 1);
+          const heroP = clamp((scrollY - heroTop) / Math.max(1, (heroHeight * 0.85) / motionPower), 0, 1);
           setHeroP(heroP.toFixed(3));
           setElementVar(hero, "--section-p", heroP.toFixed(3));
         }

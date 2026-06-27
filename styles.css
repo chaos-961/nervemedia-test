@@ -2713,3 +2713,170 @@ body.is-light .site-nav a {
     transform: none !important;
   }
 }
+
+/* =====================================================================
+   Launcher — page index above the hero.
+   A compact strip of links to standalone builds/pages. Reuses the shared
+   theme tokens and hover language (lift, border brighten, arrow nudge) so
+   it reads as the same system as the hero CTA and contact card. The hero's
+   parallax is anchored to its own top in app.js, so this section pushing
+   the hero down does not desync the scroll choreography.
+   ===================================================================== */
+.launcher {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(16px, 2.4vw, 32px);
+  padding-top: clamp(108px, 14vh, 146px);
+  padding-bottom: clamp(18px, 3vh, 34px);
+}
+
+.launcher-head {
+  display: grid;
+  gap: 8px;
+}
+
+.launcher-head .section-label {
+  margin: 0;
+}
+
+.launcher-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 3.2vw, 2.4rem);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.launcher-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(210px, 1fr));
+  gap: clamp(12px, 1.4vw, 18px);
+  min-width: min(100%, 520px);
+}
+
+.launch-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 1.4vw, 18px);
+  min-height: 78px;
+  padding: 14px clamp(56px, 6vw, 68px) 14px clamp(16px, 2vw, 22px);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(135deg, rgba(var(--theme-fg-rgb), 0.12), rgba(var(--theme-fg-rgb), 0.035)),
+    rgba(var(--theme-bg-rgb), 0.72);
+  color: rgb(var(--theme-fg-rgb));
+  text-shadow: none;
+  transition:
+    transform 240ms var(--ease),
+    border-color 240ms ease,
+    background 240ms ease,
+    box-shadow 240ms ease;
+}
+
+.launch-index {
+  flex: 0 0 auto;
+  font-family: var(--display);
+  font-size: clamp(1.1rem, 1.6vw, 1.45rem);
+  line-height: 1;
+  color: var(--muted);
+  transition: color 240ms ease;
+}
+
+.launch-body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.launch-name {
+  font-family: var(--body);
+  font-size: clamp(0.82rem, 1.1vw, 0.96rem);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.launch-note {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.launch-arrow {
+  position: absolute;
+  top: 50%;
+  right: clamp(14px, 1.6vw, 20px);
+  display: grid;
+  place-items: center;
+  width: clamp(34px, 3.4vw, 40px);
+  height: clamp(34px, 3.4vw, 40px);
+  border: 1px solid rgb(var(--theme-fg-rgb));
+  border-radius: 50%;
+  background: rgb(var(--theme-fg-rgb));
+  color: rgb(var(--theme-inverse-rgb));
+  transform: translateY(-50%);
+  transition: transform 280ms var(--ease), background 240ms ease, color 240ms ease;
+}
+
+.launch-arrow svg {
+  width: 50%;
+  height: 50%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.launch-tile:hover,
+.launch-tile:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(var(--theme-fg-rgb), 0.6);
+  background:
+    linear-gradient(135deg, rgba(var(--theme-fg-rgb), 0.2), rgba(var(--theme-fg-rgb), 0.07)),
+    rgba(var(--theme-bg-rgb), 0.8);
+  box-shadow: 0 18px 50px rgba(var(--theme-inverse-rgb), 0.22);
+}
+
+.launch-tile:hover .launch-index,
+.launch-tile:focus-visible .launch-index {
+  color: rgb(var(--theme-fg-rgb));
+}
+
+.launch-tile:hover .launch-arrow,
+.launch-tile:focus-visible .launch-arrow {
+  transform: translateY(-50%) translateX(4px);
+}
+
+@media (max-width: 760px) {
+  .launcher {
+    align-items: stretch;
+    gap: 16px;
+    padding-top: clamp(92px, 15vh, 120px);
+  }
+
+  .launcher-grid {
+    grid-template-columns: 1fr;
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (pointer: coarse) {
+  .launch-tile:active {
+    transform: translateY(1px) scale(0.985);
+    border-color: rgba(var(--theme-fg-rgb), 0.5);
+  }
+}

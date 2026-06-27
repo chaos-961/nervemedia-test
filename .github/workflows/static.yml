@@ -37,7 +37,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p _site
-          cp index.html styles.css app.js robots.txt sitemap.xml _site/
+          # All root pages (index + any standalone build pages) plus the shared
+          # assets. Globbing *.html means new pages ship without editing CI.
+          cp *.html styles.css app.js robots.txt sitemap.xml _site/
           cp -R assets _site/
           touch _site/.nojekyll
       - name: Upload artifact

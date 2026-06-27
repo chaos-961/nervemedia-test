@@ -59,7 +59,7 @@
       imagesizes="(max-width: 960px) 100vw, 81vw"
       fetchpriority="high"
     />
-    <link rel="stylesheet" href="styles.css?v=97" />
+    <link rel="stylesheet" href="styles.css?v=98" />
   </head>
   <body>
     <!-- Boot loader: dismissed by app.js once the hero image + fonts land
@@ -114,6 +114,43 @@
     </header>
 
     <main id="top">
+      <section class="launcher section-frame" aria-labelledby="launcher-title">
+        <div class="launcher-head" data-reveal data-pulse-item>
+          <p class="section-label">Pages</p>
+          <h2 id="launcher-title" class="launcher-title">Open a build</h2>
+        </div>
+
+        <nav class="launcher-grid" aria-label="Page links" data-reveal data-pulse-item>
+          <a class="launch-tile" href="laptop-animation.html">
+            <span class="launch-index" aria-hidden="true">01</span>
+            <span class="launch-body">
+              <span class="launch-name">Laptop Animation</span>
+              <span class="launch-note">Interaction study</span>
+            </span>
+            <span class="launch-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M5 12h12"></path>
+                <path d="m13 7 5 5-5 5"></path>
+              </svg>
+            </span>
+          </a>
+
+          <a class="launch-tile" href="menu-template.html">
+            <span class="launch-index" aria-hidden="true">02</span>
+            <span class="launch-body">
+              <span class="launch-name">Menu Template</span>
+              <span class="launch-note">Layout draft</span>
+            </span>
+            <span class="launch-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M5 12h12"></path>
+                <path d="m13 7 5 5-5 5"></path>
+              </svg>
+            </span>
+          </a>
+        </nav>
+      </section>
+
       <section class="hero section-frame" aria-labelledby="hero-title">
         <figure class="hero-visual" aria-label="Nerve Media campaign production in Beirut">
           <picture>
@@ -318,7 +355,7 @@
     </main>
 
     <footer class="site-footer">
-      <span class="footer-brand">Nerve Media <small>v0.0.1</small></span> <!-- version: bump +0.0.1 each release; after x.x.9 roll to x.(x+1).0 (e.g. 0.3.9 -> 0.4.0) -->
+      <span class="footer-brand">Nerve Media <small>v0.0.2</small></span> <!-- version: bump +0.0.1 each release; after x.x.9 roll to x.(x+1).0 (e.g. 0.3.9 -> 0.4.0) -->
       <span class="footer-meta">
         <span id="currentYear">2026</span>
       </span>
@@ -361,6 +398,6 @@
         ]
       }
     </script>
-    <script src="app.js?v=78" defer></script>
+    <script src="app.js?v=79" defer></script>
   </body>
 </html>
