@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://nervemedia.agency/sitemap.xml
+Sitemap: https://chaos-961.github.io/nervemedia-test/sitemap.xml
