@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Nerve Media is a creative marketing agency in Beirut, Lebanon — strategy, brand identity, content, social media, and paid campaigns that hit the nerve."
+    />
+    <meta
+      name="keywords"
+      content="marketing agency Beirut, Beirut marketing agency, marketing agency Lebanon, creative agency Beirut, branding agency Beirut, social media marketing Lebanon, advertising agency Beirut, digital marketing Lebanon"
+    />
+    <meta name="theme-color" content="#000000" />
+    <title>Nerve Media | Marketing Agency in Beirut, Lebanon</title>
+
+    <link rel="canonical" href="https://nervemedia.agency/" />
+
+    <!-- Social sharing -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Nerve Media" />
+    <meta property="og:title" content="Nerve Media | Marketing That Hits The Nerve" />
+    <meta
+      property="og:description"
+      content="Beirut marketing studio for sharper strategy, content, identity, and campaigns. Marketing that hits the nerve."
+    />
+    <meta property="og:url" content="https://nervemedia.agency/" />
+    <meta property="og:image" content="https://nervemedia.agency/assets/nerve-media-og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Nerve Media — marketing agency in Beirut, Lebanon" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Nerve Media | Marketing That Hits The Nerve" />
+    <meta
+      name="twitter:description"
+      content="Creative marketing agency in Beirut, Lebanon — strategy, identity, content, and campaigns."
+    />
+    <meta name="twitter:image" content="https://nervemedia.agency/assets/nerve-media-og.png" />
+
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/nerve-media-logo.png" />
+    <link rel="apple-touch-icon" href="assets/nerve-media-logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Trimmed weight set: Anton (display) + Archivo 400/700/900 + one
+         Archivo Expanded 800 for the hero line. Other 800 usages snap to 900. -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;700;900&family=Archivo+Expanded:wght@800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="preload"
+      as="image"
+      type="image/avif"
+      imagesrcset="
+        assets/nerve-media-beirut-shoot-800.avif 800w,
+        assets/nerve-media-beirut-shoot-1200.avif 1200w,
+        assets/nerve-media-beirut-shoot-1600.avif 1600w"
+      imagesizes="(max-width: 960px) 100vw, 81vw"
+      fetchpriority="high"
+    />
+    <link rel="stylesheet" href="styles.css?v=97" />
+  </head>
+  <body>
+    <!-- Boot loader: dismissed by app.js once the hero image + fonts land
+         (max 2.8s); CSS failsafe hides it if JS dies; noscript removes it. -->
+    <div class="loader" id="loader" aria-hidden="true">
+      <div class="loader-inner">
+        <span class="loader-mark" aria-hidden="true">
+          <img class="loader-logo" src="assets/nerve-media-logo.png" alt="" width="512" height="512" />
+        </span>
+        <span class="loader-line"><i></i></span>
+      </div>
+    </div>
+    <noscript><style>.loader { display: none; }</style></noscript>
+    <a class="skip-link" href="#top">Skip to content</a>
+    <canvas class="nerve-canvas" id="nerveCanvas" aria-hidden="true"></canvas>
+    <div class="background-field" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="site-header" data-pulse-item>
+      <a class="brand" href="#top" aria-label="Nerve Media home">
+        <span class="brand-mark">NERVE MEDIA</span>
+      </a>
+
+      <nav class="site-nav" aria-label="Primary">
+        <a href="#services">Services</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <div class="header-actions">
+        <a class="whatsapp-button" href="https://wa.me/96176087895?text=Hi%20Nerve%20Media%2C%20I%27d%20like%20to%20talk%20about%20a%20project." target="_blank" rel="noopener" data-track-link="whatsapp">
+          <span class="whatsapp-dot" aria-hidden="true"></span>
+          <span>WhatsApp</span>
+        </a>
+
+        <a class="instagram-link" href="https://www.instagram.com/nerve.media/" target="_blank" rel="noopener" aria-label="Nerve Media on Instagram" data-track-link="instagram">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <defs>
+              <linearGradient id="instagram-stroke" x1="4" y1="20" x2="20" y2="4" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#feda75"></stop>
+                <stop offset="0.32" stop-color="#fa7e1e"></stop>
+                <stop offset="0.58" stop-color="#d62976"></stop>
+                <stop offset="0.78" stop-color="#962fbf"></stop>
+                <stop offset="1" stop-color="#4f5bd5"></stop>
+              </linearGradient>
+            </defs>
+            <rect class="instagram-frame" x="3.2" y="3.2" width="17.6" height="17.6" rx="5.4" stroke="url(#instagram-stroke)"></rect>
+            <circle class="instagram-lens" cx="12" cy="12" r="4.05" stroke="url(#instagram-stroke)"></circle>
+            <circle class="instagram-dot" cx="17.2" cy="6.8" r="1.25"></circle>
+          </svg>
+        </a>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero section-frame" aria-labelledby="hero-title">
+        <figure class="hero-visual" aria-label="Nerve Media campaign production in Beirut">
+          <picture>
+            <source
+              type="image/avif"
+              srcset="
+                assets/nerve-media-beirut-shoot-800.avif 800w,
+                assets/nerve-media-beirut-shoot-1200.avif 1200w,
+                assets/nerve-media-beirut-shoot-1600.avif 1600w"
+              sizes="(max-width: 960px) 100vw, 81vw"
+            />
+            <source
+              type="image/webp"
+              srcset="
+                assets/nerve-media-beirut-shoot-800.webp 800w,
+                assets/nerve-media-beirut-shoot-1200.webp 1200w,
+                assets/nerve-media-beirut-shoot-1600.webp 1600w"
+              sizes="(max-width: 960px) 100vw, 81vw"
+            />
+            <img
+              src="assets/nerve-media-beirut-shoot-1200.jpg"
+              srcset="
+                assets/nerve-media-beirut-shoot-1200.jpg 1200w,
+                assets/nerve-media-beirut-shoot.jpeg 2400w"
+              sizes="(max-width: 960px) 100vw, 81vw"
+              alt="A fashion campaign being photographed on a Beirut street"
+              width="2400"
+              height="3200"
+              loading="eager"
+              decoding="async"
+              fetchpriority="high"
+            />
+          </picture>
+        </figure>
+
+        <div class="hero-copy" data-reveal data-pulse-item>
+          <p class="eyebrow">MARKETING AGENCY - BEIRUT</p>
+          <h1 id="hero-title" class="load-title">
+            <span class="sr-only">Nerve Media</span>
+            <span data-split aria-hidden="true">Nerve</span>
+            <span data-split aria-hidden="true">Media</span>
+          </h1>
+          <p class="hero-line">Marketing that hits the nerve.</p>
+        </div>
+
+        <div class="hero-actions" data-reveal data-pulse-item>
+          <a class="button button-primary" href="https://wa.me/96176087895?text=Hi%20Nerve%20Media%2C%20I%27m%20interested%20in%20building%20a%20campaign%2Fwebsite%2Fbrand%20system.%20Can%20we%20discuss%20my%20project%3F" target="_blank" rel="noopener">
+            <span>Send the brief</span>
+            <strong>+961 76 087 895</strong>
+          </a>
+          <p>
+            Strategy, identity, content, and media joined into one clear move.
+          </p>
+        </div>
+
+      </section>
+
+      <section class="manifesto section-frame" aria-labelledby="manifesto-title">
+        <div class="section-label" data-reveal>What changes</div>
+        <h2 id="manifesto-title" class="manifesto-phrases" data-pulse-item>
+          <span class="phrase" data-dir="left">If people scroll past it,</span>
+          <span class="phrase" data-dir="right">it was not marketing.</span>
+          <span class="phrase" data-dir="left">It was wallpaper.</span>
+        </h2>
+        <p data-polarize data-pulse-item>
+          Nerve Media builds campaigns that carry one sharp idea across words,
+          visuals, content, and paid media. Not louder for the sake of noise.
+          Clearer, tighter, harder to ignore.
+        </p>
+      </section>
+
+      <section class="services section-frame" id="services" aria-labelledby="services-title">
+        <div class="services-pin" data-services-pin>
+          <div class="services-stage">
+            <div class="services-intro">
+              <div class="section-label" data-reveal>Services</div>
+              <h2 id="services-title" data-reveal>Every channel. One nerve.</h2>
+              <p class="services-count" aria-hidden="true"><span data-services-count>01</span><em>/ 06</em></p>
+            </div>
+
+            <div class="services-machine" data-services-display>
+              <div class="services-band" aria-hidden="true"></div>
+              <div class="services-command" aria-hidden="true">
+                <span>We</span>
+                <span>do</span>
+              </div>
+
+              <div class="services-viewport">
+                <ol class="services-list" data-services-list>
+                  <li class="service-item is-active" data-service-item>
+                    <article>
+                      <div class="service-word">
+                        <span class="service-num" aria-hidden="true">01</span>
+                        <h3>Strategy.</h3>
+                      </div>
+                      <div class="service-copy">
+                        <strong>Strategy &amp; Positioning</strong>
+                        <p>Market reads, audience mapping, and a message hierarchy that decides what you say first, everywhere.</p>
+                        <span class="service-meta">Research · Positioning · Messaging</span>
+                      </div>
+                    </article>
+                  </li>
+                  <li class="service-item" data-service-item>
+                    <article>
+                      <div class="service-word">
+                        <span class="service-num" aria-hidden="true">02</span>
+                        <h3>Identity.</h3>
+                      </div>
+                      <div class="service-copy">
+                        <strong>Brand Identity</strong>
+                        <p>Logo systems, type, color, and a voice that survives every export size and every handoff.</p>
+                        <span class="service-meta">Logos · Systems · Guidelines</span>
+                      </div>
+                    </article>
+                  </li>
+                  <li class="service-item" data-service-item>
+                    <article>
+                      <div class="service-word">
+                        <span class="service-num" aria-hidden="true">03</span>
+                        <h3>Content.</h3>
+                      </div>
+                      <div class="service-copy">
+                        <strong>Content &amp; Production</strong>
+                        <p>Short-form video, shoots, and design built for the feed and cut to stop the thumb.</p>
+                        <span class="service-meta">Video · Photo · Design</span>
+                      </div>
+                    </article>
+                  </li>
+                  <li class="service-item" data-service-item>
+                    <article>
+                      <div class="service-word">
+                        <span class="service-num" aria-hidden="true">04</span>
+                        <h3>Social.</h3>
+                      </div>
+                      <div class="service-copy">
+                        <strong>Social Media Management</strong>
+                        <p>Calendars, captions, and community rhythms that compound instead of churn.</p>
+                        <span class="service-meta">Calendars · Community · Growth</span>
+                      </div>
+                    </article>
+                  </li>
+                  <li class="service-item" data-service-item>
+                    <article>
+                      <div class="service-word">
+                        <span class="service-num" aria-hidden="true">05</span>
+                        <h3>Performance.</h3>
+                      </div>
+                      <div class="service-copy">
+                        <strong>Paid Media &amp; Performance</strong>
+                        <p>Meta, Google, and TikTok campaigns wired to tracking that tells the truth.</p>
+                        <span class="service-meta">Ads · Funnels · Tracking</span>
+                      </div>
+                    </article>
+                  </li>
+                  <li class="service-item" data-service-item>
+                    <article>
+                      <div class="service-word">
+                        <span class="service-num" aria-hidden="true">06</span>
+                        <h3>Web.</h3>
+                      </div>
+                      <div class="service-copy">
+                        <strong>Web &amp; Launch Pages</strong>
+                        <p>Landing pages and sites that load fast, read sharp, and point at one action.</p>
+                        <span class="service-meta">Landing pages · Sites · CRO</span>
+                      </div>
+                    </article>
+                  </li>
+                </ol>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="contact section-frame" id="contact" aria-labelledby="contact-title">
+        <div class="contact-panel" data-reveal data-pulse-item>
+          <div class="contact-copy">
+            <div class="section-label dark">Contact</div>
+            <h2 id="contact-title">
+              <span>Bring the problem.</span>
+              <span>Get the next move.</span>
+            </h2>
+            <p>
+              Send us your brand, your goal, and what feels stuck. We will reply
+              on WhatsApp with the cleanest way forward.
+            </p>
+          </div>
+
+          <a class="message-card" href="https://wa.me/96176087895?text=Hi%20Nerve%20Media%2C%20I%27m%20interested%20in%20building%20a%20campaign%2Fwebsite%2Fbrand%20system.%20Can%20we%20discuss%20my%20project%3F" target="_blank" rel="noopener" data-track-link="phone">
+            <span class="message-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M5 12h12"></path>
+                <path d="m13 7 5 5-5 5"></path>
+              </svg>
+            </span>
+            <span class="message-label">Send the brief</span>
+            <strong>+961 76 087 895</strong>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span class="footer-brand">Nerve Media <small>v0.3.3</small></span> <!-- version: bump +0.0.1 each release; after x.x.9 roll to x.(x+1).0 (e.g. 0.3.9 -> 0.4.0) -->
+      <span class="footer-meta">
+        <span id="currentYear">2026</span>
+      </span>
+    </footer>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ProfessionalService",
+        "@id": "https://nervemedia.agency/#organization",
+        "name": "Nerve Media",
+        "alternateName": "Nerve Media Agency",
+        "description": "Creative marketing agency in Beirut, Lebanon — strategy, brand identity, content, social media, and paid campaigns.",
+        "url": "https://nervemedia.agency/",
+        "logo": "https://nervemedia.agency/assets/nerve-media-logo.png",
+        "image": "https://nervemedia.agency/assets/nerve-media-og.png",
+        "slogan": "Marketing that hits the nerve.",
+        "telephone": "+961 76 087 895",
+        "areaServed": [
+          { "@type": "City", "name": "Beirut" },
+          { "@type": "Country", "name": "Lebanon" }
+        ],
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Beirut",
+          "addressRegion": "Beirut",
+          "addressCountry": "LB"
+        },
+        "knowsAbout": [
+          "Marketing strategy",
+          "Brand identity",
+          "Content production",
+          "Social media management",
+          "Paid media and performance marketing",
+          "Web design"
+        ],
+        "sameAs": [
+          "https://www.instagram.com/nerve.media/",
+          "https://wa.me/96176087895"
+        ]
+      }
+    </script>
+    <script src="app.js?v=78" defer></script>
+  </body>
+</html>
