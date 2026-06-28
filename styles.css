@@ -2762,6 +2762,7 @@ body.is-light .site-nav a {
 
 .launch-tile {
   position: relative;
+  pointer-events: none;
   display: flex;
   align-items: center;
   gap: clamp(12px, 1.4vw, 18px);
