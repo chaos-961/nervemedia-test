@@ -1,59 +1,359 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex" />
-    <title>Laptop Animation</title>
-    <style>
-      :root { color-scheme: dark; }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        min-height: 100svh;
-        display: grid;
-        place-items: center;
-        gap: 18px;
-        padding: 40px;
-        background: #0a0a0a;
-        color: #fff;
-        font-family: "Helvetica Neue", Arial, sans-serif;
-        text-align: center;
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex" />
+<meta name="color-scheme" content="light" />
+<title>Scroll-Driven Laptop</title>
+<style>
+  /* ===========================================================
+     Pure white. A 3D aluminium laptop that APPEARS (closed),
+     OPENS on scroll, holds, then CLOSES.
+     Model: the keyboard deck is laid flat on its OWN axis
+     (--deck-lay); the lid is hinged at the shared rear edge and
+     stands up toward a near-front camera. lid-angle: ~104deg =
+     folded/closed over the keys, ~2deg = upright/open (screen
+     faces the camera). Geometry is fully parameterised.
+     =========================================================== */
+  :root {
+    color-scheme: light;
+
+    /* ---- geometry (tunable) ---- */
+    --w: min(72vw, 92vh, 720px);
+    --deck-d: calc(var(--w) * 0.66);     /* keyboard depth */
+    --lid-h: calc(var(--w) * 0.62);      /* screen height */
+    --view: 12deg;                       /* look slightly down */
+    --yaw: -18deg;                       /* 3/4 turn */
+    --deck-lay: 74deg;                   /* lay the keyboard flat */
+    --closed: 104deg;                    /* lid folded on the keys */
+    --open: 3deg;                        /* lid upright, screen to camera */
+
+    /* ---- drivers (written by JS each frame) ---- */
+    --lid-open: 1;                       /* 0 = closed, 1 = open */
+    --rise: 0px;
+    --dolly: 0px;
+    --scale: 1;
+    --opacity: 1;
+    --shadow: 0.85;
+    --shadow-x: 1.1;
+    --glare: 0.4;
+
+    --lid-angle: calc(var(--closed) + (var(--open) - var(--closed)) * var(--lid-open));
+    --scroll-progress: 0;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fff; color: #111; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+  }
+
+  .track { position: relative; height: 360vh; background: #fff; }
+  .stage {
+    position: sticky; top: 0; height: 100vh; height: 100svh;
+    display: grid; place-items: center; overflow: hidden; background: #fff;
+  }
+
+  .scene {
+    position: relative;
+    width: var(--w);
+    height: calc(var(--w) * 0.92);
+    perspective: 1500px;
+    perspective-origin: 50% 42%;
+  }
+
+  /* floor contact shadow (independent of the 3D rig) */
+  .shadow {
+    position: absolute; left: 50%; bottom: 17%;
+    width: calc(var(--w) * 0.82); height: calc(var(--w) * 0.13);
+    transform: translateX(-50%) scaleX(var(--shadow-x));
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 50%,
+      rgba(28,32,38,0.34) 0%, rgba(28,32,38,0.18) 46%, rgba(28,32,38,0) 72%);
+    opacity: var(--shadow);
+    filter: blur(12px);
+  }
+
+  /* rig: hinge line is at y=0; appear + camera transforms live here */
+  .laptop {
+    position: absolute; left: 50%; top: 50%;
+    width: var(--w); height: 0;
+    transform-style: preserve-3d;
+    transform:
+      translate(-50%, -50%)
+      translateY(var(--rise))
+      translateZ(var(--dolly))
+      scale(var(--scale))
+      rotateX(var(--view))
+      rotateY(var(--yaw));
+    opacity: var(--opacity);
+    will-change: transform, opacity;
+  }
+
+  /* keyboard deck — laid flat, hinged at its rear (top) edge */
+  .deck {
+    position: absolute; left: 0; top: 0;
+    width: var(--w); height: var(--deck-d);
+    transform-origin: 50% 0%;
+    transform: rotateX(var(--deck-lay));
+    transform-style: preserve-3d;
+  }
+  .deck-face {
+    position: absolute; inset: 0;
+    border-radius: 2.6% / 3.6%;
+    background: linear-gradient(180deg, #f5f7f9 0%, #e7eaee 26%, #d5dae0 68%, #c4cad1 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.9),
+      inset 0 0 0 1px rgba(255,255,255,0.3),
+      inset 0 -3px 10px rgba(0,0,0,0.10),
+      0 3px 6px rgba(0,0,0,0.16);
+  }
+  .keys {
+    position: absolute; left: 7%; right: 7%; top: 9%; height: 52%;
+    border-radius: 1.4% / 3%;
+    background: linear-gradient(180deg, #c8cdd3, #b5bbc2);
+    box-shadow: inset 0 2px 7px rgba(0,0,0,0.28), inset 0 -1px 0 rgba(255,255,255,0.45);
+  }
+  .trackpad {
+    position: absolute; left: 33%; right: 33%; bottom: 7%; height: 27%;
+    border-radius: 4% / 9%;
+    background: linear-gradient(180deg, #eaedf0, #dbe0e5);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05);
+  }
+
+  /* lid — body sits ABOVE the hinge; bottom edge pinned to y=0 */
+  .lid {
+    position: absolute; left: 0; top: calc(-1 * var(--lid-h));
+    width: var(--w); height: var(--lid-h);
+    transform-origin: 50% 100%;
+    transform: rotateX(var(--lid-angle));
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+  .lid-face {
+    position: absolute; inset: 0;
+    border-radius: 2.8% / 3.4%;
+    backface-visibility: hidden;
+  }
+  /* screen face — front (+z), seen when the lid stands up */
+  .lid-front {
+    background: linear-gradient(180deg, #202226, #15171a);
+    padding: 3%;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 6px 22px rgba(0,0,0,0.18);
+  }
+  .screen {
+    position: absolute; inset: 3%;
+    border-radius: 1.2% / 1.6%;
+    overflow: hidden;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 65%, #f6f8fa 100%);
+  }
+  .camera {
+    position: absolute; top: 1.4%; left: 50%; width: 0.8%; aspect-ratio: 1/1;
+    transform: translateX(-50%); border-radius: 50%;
+    background: #2b2d31; box-shadow: 0 0 0 1px rgba(0,0,0,0.18);
+  }
+  .glare {
+    position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+    background: linear-gradient(118deg,
+      rgba(255,255,255,0) 34%, rgba(255,255,255,0.5) 48%,
+      rgba(255,255,255,0.08) 60%, rgba(255,255,255,0) 72%);
+    opacity: var(--glare);
+    transform: translateX(calc((var(--glare) - 0.5) * 22%));
+  }
+  /* aluminium back — rear (−z) face, seen when closed */
+  .lid-back {
+    transform: rotateY(180deg);
+    background: linear-gradient(170deg, #f1f3f6 0%, #e0e4e9 30%, #cbd1d8 70%, #b7bdc5 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -14px 32px rgba(0,0,0,0.14);
+  }
+  /* hinge accent along the rear seam */
+  .hinge {
+    position: absolute; left: 8%; width: 84%; bottom: -1.2%; height: 2.4%;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #3a3d42, #1b1d21 60%, #2b2e32);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+
+  /* scroll hint */
+  .hint {
+    position: fixed; left: 50%; top: clamp(16px, 4vh, 40px);
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: #9aa0a8; font-size: 0.62rem; font-weight: 600;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    pointer-events: none; opacity: 1; transition: opacity 480ms ease; z-index: 10;
+  }
+  .hint.is-hidden { opacity: 0; }
+  .hint .chev {
+    width: 13px; height: 13px;
+    border-right: 2px solid #b8bec6; border-bottom: 2px solid #b8bec6;
+    transform: rotate(45deg); animation: bob 1.8s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%,100% { transform: rotate(45deg) translate(0,0); }
+    50%     { transform: rotate(45deg) translate(2px,2px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root { --lid-open: 1; --opacity: 1; --scale: 1; --rise: 0px; --dolly: 0px; --shadow: 0.85; --shadow-x: 1.1; --glare: 0.4; }
+    .track { height: 100vh; height: 100svh; }
+    .hint { display: none; }
+    .chev { animation: none; }
+  }
+</style>
+</head>
+<body>
+  <h1 class="sr-only">A laptop that opens and closes as you scroll.</h1>
+
+  <div class="hint" id="hint" aria-hidden="true">
+    <span>Scroll</span>
+    <span class="chev"></span>
+  </div>
+
+  <div class="track" id="track">
+    <div class="stage" id="stage">
+      <div class="scene" aria-hidden="true">
+        <div class="shadow"></div>
+        <div class="laptop" id="laptop">
+          <div class="deck">
+            <div class="deck-face">
+              <div class="keys"></div>
+              <div class="trackpad"></div>
+            </div>
+          </div>
+
+          <div class="lid">
+            <div class="lid-face lid-back"></div>
+            <div class="lid-face lid-front">
+              <div class="screen">
+                <div class="camera"></div>
+                <div class="glare"></div>
+              </div>
+            </div>
+            <div class="hinge"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    "use strict";
+    var docEl = document.documentElement;
+    var track = document.getElementById("track");
+    var hint = document.getElementById("hint");
+    window.__laptop = { progress: 0, lidOpen: 0 };
+
+    var reduceMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
+    function clamp01(v){ return v < 0 ? 0 : v > 1 ? 1 : v; }
+    function seg(p,a,b){ return clamp01((p - a) / (b - a)); }
+    function easeInOutCubic(t){ return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; }
+    function easeOutCubic(t){ return 1 - Math.pow(1-t,3); }
+    function lerp(a,b,t){ return a + (b-a)*t; }
+
+    var trackTop = 0, scrollRange = 1;
+    function cacheMetrics(){
+      var r = track.getBoundingClientRect();
+      trackTop = r.top + (window.pageYOffset || docEl.scrollTop || 0);
+      scrollRange = Math.max(1, track.offsetHeight - window.innerHeight);
+    }
+
+    var hintHidden = false;
+    function applyPose(p){
+      var enter = easeOutCubic(seg(p, 0.00, 0.18));
+      var open  = easeInOutCubic(seg(p, 0.18, 0.52));
+      var close = easeInOutCubic(seg(p, 0.68, 1.00));
+
+      var lidOpen;
+      if (p < 0.52) lidOpen = open;          // closed -> open
+      else if (p < 0.68) lidOpen = 1;        // hold open
+      else lidOpen = 1 - close;              // open -> closed
+
+      var opacity = enter;
+      var scale, rise, dolly, sceneShadow, shadowX, glare;
+
+      if (p < 0.18) {                         // appear (closed)
+        scale = lerp(0.88, 1.0, enter);
+        rise  = lerp(46, 0, enter);
+        dolly = 0;
+        sceneShadow = lerp(0.0, 0.5, enter);
+        shadowX = 1.0;
+        glare = 0;
+      } else if (p < 0.52) {                  // opening
+        scale = 1.0; rise = 0; dolly = lerp(0, 30, open);
+        sceneShadow = lerp(0.5, 0.85, open);
+        shadowX = lerp(1.0, 1.1, open);
+        glare = 0.5 * Math.sin(open * Math.PI);
+      } else if (p < 0.68) {                  // hold open
+        scale = 1.0; rise = 0; dolly = 30;
+        sceneShadow = 0.85; shadowX = 1.1; glare = 0.4;
+      } else {                                // closing
+        scale = lerp(1.0, 0.97, close);
+        rise = lerp(0, 6, close);
+        dolly = lerp(30, 0, close);
+        sceneShadow = lerp(0.85, 0.5, close);
+        shadowX = lerp(1.1, 1.0, close);
+        glare = lerp(0.4, 0, close);
       }
-      h1 {
-        margin: 0;
-        font-size: clamp(2rem, 7vw, 4rem);
-        font-weight: 800;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
-      }
-      p {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.55);
-        font-size: 0.78rem;
-        font-weight: 700;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-      }
-      a {
-        margin-top: 10px;
-        padding: 12px 20px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: #fff;
-        font-size: 0.72rem;
-        font-weight: 800;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        text-decoration: none;
-        transition: border-color 200ms ease, transform 200ms ease;
-      }
-      a:hover,
-      a:focus-visible { border-color: #fff; transform: translateY(-2px); }
-    </style>
-  </head>
-  <body>
-    <p>Placeholder</p>
-    <h1>Laptop Animation</h1>
-    <a href="index.html">&larr; Back</a>
-  </body>
+
+      var r = docEl.style;
+      r.setProperty("--lid-open", lidOpen.toFixed(4));
+      r.setProperty("--opacity", opacity.toFixed(3));
+      r.setProperty("--scale", scale.toFixed(4));
+      r.setProperty("--rise", rise.toFixed(2) + "px");
+      r.setProperty("--dolly", dolly.toFixed(2) + "px");
+      r.setProperty("--shadow", sceneShadow.toFixed(3));
+      r.setProperty("--shadow-x", shadowX.toFixed(4));
+      r.setProperty("--glare", glare.toFixed(3));
+      r.setProperty("--scroll-progress", p.toFixed(3));
+
+      window.__laptop.progress = p;
+      window.__laptop.lidOpen = lidOpen;
+
+      if (!hintHidden && p > 0.012) { hintHidden = true; if (hint) hint.classList.add("is-hidden"); }
+      else if (hintHidden && p <= 0.012) { hintHidden = false; if (hint) hint.classList.remove("is-hidden"); }
+    }
+
+    var ticking = false;
+    function update(){
+      ticking = false;
+      var y = window.pageYOffset || docEl.scrollTop || 0;
+      applyPose(clamp01((y - trackTop) / scrollRange));
+    }
+    function onScroll(){ if (!ticking){ ticking = true; requestAnimationFrame(update); } }
+
+    var resizePending = false;
+    function onResize(){
+      if (!resizePending){ resizePending = true; requestAnimationFrame(function(){ resizePending = false; cacheMetrics(); update(); }); }
+    }
+
+    function applyReducedMotion(){
+      docEl.style.setProperty("--lid-open", "1");
+      docEl.style.setProperty("--scroll-progress", "0.55");
+      window.__laptop.progress = 0.55; window.__laptop.lidOpen = 1;
+      if (hint) hint.classList.add("is-hidden");
+    }
+    function enableScroll(){
+      cacheMetrics();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onResize);
+      window.addEventListener("orientationchange", onResize);
+      update();
+    }
+    function init(){ if (reduceMQ.matches) applyReducedMotion(); else enableScroll(); }
+
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+    else init();
+  })();
+  </script>
+</body>
 </html>
