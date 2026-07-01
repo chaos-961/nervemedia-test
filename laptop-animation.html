@@ -5,48 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex" />
 <meta name="color-scheme" content="light" />
-<title>Scroll-Driven Laptop</title>
+<title>Nerve Media — Laptop</title>
 <style>
   /* ===========================================================
-     Pure white. A 3D aluminium laptop that APPEARS (closed),
-     OPENS on scroll, holds, then CLOSES.
-     Model: the keyboard deck is laid flat on its OWN axis
-     (--deck-lay); the lid is hinged at the shared rear edge and
-     stands up toward a near-front camera. lid-angle: ~104deg =
-     folded/closed over the keys, ~2deg = upright/open (screen
-     faces the camera). Geometry is fully parameterised.
+     A real WebGL (Three.js) aluminium laptop on pure white.
+     It APPEARS closed, OPENS on scroll and reveals the Nerve
+     Media wordmark glowing on the screen, HOLDS, then CLOSES.
+     Scroll drives a single progress value p in [0,1]; the same
+     appear / open / hold / close choreography as before, now in
+     3D. No build step: Three.js loads via a CDN import map.
+     Falls back to a static poster when WebGL / motion is off.
      =========================================================== */
-  :root {
-    color-scheme: light;
-
-    /* ---- geometry (tunable) ---- */
-    --w: min(72vw, 92vh, 720px);
-    --deck-d: calc(var(--w) * 0.66);     /* keyboard depth */
-    --lid-h: calc(var(--w) * 0.62);      /* screen height */
-    --view: 12deg;                       /* look slightly down */
-    --yaw: -18deg;                       /* 3/4 turn */
-    --deck-lay: 74deg;                   /* lay the keyboard flat */
-    --closed: 104deg;                    /* lid folded on the keys */
-    --open: 3deg;                        /* lid upright, screen to camera */
-
-    /* ---- drivers (written by JS each frame) ---- */
-    --lid-open: 1;                       /* 0 = closed, 1 = open */
-    --rise: 0px;
-    --dolly: 0px;
-    --scale: 1;
-    --opacity: 1;
-    --shadow: 0.85;
-    --shadow-x: 1.1;
-    --glare: 0.4;
-
-    --lid-angle: calc(var(--closed) + (var(--open) - var(--closed)) * var(--lid-open));
-    --scroll-progress: 0;
-  }
-
+  :root { color-scheme: light; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: #fff; color: #111; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
@@ -59,127 +33,33 @@
   .track { position: relative; height: 360vh; background: #fff; }
   .stage {
     position: sticky; top: 0; height: 100vh; height: 100svh;
-    display: grid; place-items: center; overflow: hidden; background: #fff;
+    overflow: hidden; background: #fff;
   }
 
-  .scene {
-    position: relative;
-    width: var(--w);
-    height: calc(var(--w) * 0.92);
-    perspective: 1500px;
-    perspective-origin: 50% 42%;
+  /* WebGL canvas fills the sticky stage */
+  #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* white veil for a clean fade-in at the start and fade-out at the very end */
+  .veil {
+    position: absolute; inset: 0; background: #fff;
+    pointer-events: none; z-index: 2; opacity: 1;
   }
 
-  /* floor contact shadow (independent of the 3D rig) */
-  .shadow {
-    position: absolute; left: 50%; bottom: 17%;
-    width: calc(var(--w) * 0.82); height: calc(var(--w) * 0.13);
-    transform: translateX(-50%) scaleX(var(--shadow-x));
-    border-radius: 50%;
-    background: radial-gradient(ellipse at 50% 50%,
-      rgba(28,32,38,0.34) 0%, rgba(28,32,38,0.18) 46%, rgba(28,32,38,0) 72%);
-    opacity: var(--shadow);
-    filter: blur(12px);
+  /* static poster shown when WebGL is unavailable or the CDN fails to load */
+  .poster {
+    position: absolute; inset: 0; z-index: 3;
+    display: none; place-items: center;
   }
-
-  /* rig: hinge line is at y=0; appear + camera transforms live here */
-  .laptop {
-    position: absolute; left: 50%; top: 50%;
-    width: var(--w); height: 0;
-    transform-style: preserve-3d;
-    transform:
-      translate(-50%, -50%)
-      translateY(var(--rise))
-      translateZ(var(--dolly))
-      scale(var(--scale))
-      rotateX(var(--view))
-      rotateY(var(--yaw));
-    opacity: var(--opacity);
-    will-change: transform, opacity;
+  .poster-card {
+    width: min(72vw, 460px); aspect-ratio: 16 / 10;
+    border-radius: 16px;
+    background: radial-gradient(120% 140% at 50% 30%, #17181c 0%, #0a0b0d 70%);
+    display: grid; place-items: center;
+    box-shadow: 0 40px 90px rgba(20, 24, 30, 0.28), inset 0 0 0 1px rgba(255,255,255,0.05);
   }
-
-  /* keyboard deck — laid flat, hinged at its rear (top) edge */
-  .deck {
-    position: absolute; left: 0; top: 0;
-    width: var(--w); height: var(--deck-d);
-    transform-origin: 50% 0%;
-    transform: rotateX(var(--deck-lay));
-    transform-style: preserve-3d;
-  }
-  .deck-face {
-    position: absolute; inset: 0;
-    border-radius: 2.6% / 3.6%;
-    background: linear-gradient(180deg, #f5f7f9 0%, #e7eaee 26%, #d5dae0 68%, #c4cad1 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.9),
-      inset 0 0 0 1px rgba(255,255,255,0.3),
-      inset 0 -3px 10px rgba(0,0,0,0.10),
-      0 3px 6px rgba(0,0,0,0.16);
-  }
-  .keys {
-    position: absolute; left: 7%; right: 7%; top: 9%; height: 52%;
-    border-radius: 1.4% / 3%;
-    background: linear-gradient(180deg, #c8cdd3, #b5bbc2);
-    box-shadow: inset 0 2px 7px rgba(0,0,0,0.28), inset 0 -1px 0 rgba(255,255,255,0.45);
-  }
-  .trackpad {
-    position: absolute; left: 33%; right: 33%; bottom: 7%; height: 27%;
-    border-radius: 4% / 9%;
-    background: linear-gradient(180deg, #eaedf0, #dbe0e5);
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05);
-  }
-
-  /* lid — body sits ABOVE the hinge; bottom edge pinned to y=0 */
-  .lid {
-    position: absolute; left: 0; top: calc(-1 * var(--lid-h));
-    width: var(--w); height: var(--lid-h);
-    transform-origin: 50% 100%;
-    transform: rotateX(var(--lid-angle));
-    transform-style: preserve-3d;
-    will-change: transform;
-  }
-  .lid-face {
-    position: absolute; inset: 0;
-    border-radius: 2.8% / 3.4%;
-    backface-visibility: hidden;
-  }
-  /* screen face — front (+z), seen when the lid stands up */
-  .lid-front {
-    background: linear-gradient(180deg, #202226, #15171a);
-    padding: 3%;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 6px 22px rgba(0,0,0,0.18);
-  }
-  .screen {
-    position: absolute; inset: 3%;
-    border-radius: 1.2% / 1.6%;
-    overflow: hidden;
-    background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 65%, #f6f8fa 100%);
-  }
-  .camera {
-    position: absolute; top: 1.4%; left: 50%; width: 0.8%; aspect-ratio: 1/1;
-    transform: translateX(-50%); border-radius: 50%;
-    background: #2b2d31; box-shadow: 0 0 0 1px rgba(0,0,0,0.18);
-  }
-  .glare {
-    position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
-    background: linear-gradient(118deg,
-      rgba(255,255,255,0) 34%, rgba(255,255,255,0.5) 48%,
-      rgba(255,255,255,0.08) 60%, rgba(255,255,255,0) 72%);
-    opacity: var(--glare);
-    transform: translateX(calc((var(--glare) - 0.5) * 22%));
-  }
-  /* aluminium back — rear (−z) face, seen when closed */
-  .lid-back {
-    transform: rotateY(180deg);
-    background: linear-gradient(170deg, #f1f3f6 0%, #e0e4e9 30%, #cbd1d8 70%, #b7bdc5 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -14px 32px rgba(0,0,0,0.14);
-  }
-  /* hinge accent along the rear seam */
-  .hinge {
-    position: absolute; left: 8%; width: 84%; bottom: -1.2%; height: 2.4%;
-    border-radius: 999px;
-    background: linear-gradient(180deg, #3a3d42, #1b1d21 60%, #2b2e32);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  .poster-card img {
+    width: 66%; height: auto; border-radius: 8px;
+    filter: drop-shadow(0 0 26px rgba(255, 255, 255, 0.18));
   }
 
   /* scroll hint */
@@ -202,8 +82,16 @@
     50%     { transform: rotate(45deg) translate(2px,2px); }
   }
 
+  /* fallback / static-frame states collapse the scroll track */
+  html.is-fallback #gl,
+  html.is-fallback .veil { display: none; }
+  html.is-fallback .poster { display: grid; }
+  html.is-fallback .track,
+  html.is-static .track { height: 100vh; height: 100svh; }
+  html.is-fallback .hint,
+  html.is-static .hint { display: none; }
+
   @media (prefers-reduced-motion: reduce) {
-    :root { --lid-open: 1; --opacity: 1; --scale: 1; --rise: 0px; --dolly: 0px; --shadow: 0.85; --shadow-x: 1.1; --glare: 0.4; }
     .track { height: 100vh; height: 100svh; }
     .hint { display: none; }
     .chev { animation: none; }
@@ -211,7 +99,7 @@
 </style>
 </head>
 <body>
-  <h1 class="sr-only">A laptop that opens and closes as you scroll.</h1>
+  <h1 class="sr-only">The Nerve Media laptop opens as you scroll and reveals the brand on its screen.</h1>
 
   <div class="hint" id="hint" aria-hidden="true">
     <span>Scroll</span>
@@ -220,140 +108,436 @@
 
   <div class="track" id="track">
     <div class="stage" id="stage">
-      <div class="scene" aria-hidden="true">
-        <div class="shadow"></div>
-        <div class="laptop" id="laptop">
-          <div class="deck">
-            <div class="deck-face">
-              <div class="keys"></div>
-              <div class="trackpad"></div>
-            </div>
-          </div>
-
-          <div class="lid">
-            <div class="lid-face lid-back"></div>
-            <div class="lid-face lid-front">
-              <div class="screen">
-                <div class="camera"></div>
-                <div class="glare"></div>
-              </div>
-            </div>
-            <div class="hinge"></div>
-          </div>
+      <canvas id="gl" aria-hidden="true"></canvas>
+      <div class="veil" id="veil" aria-hidden="true"></div>
+      <div class="poster" id="poster" aria-hidden="true">
+        <div class="poster-card">
+          <img src="assets/nerve-media-logo.png" width="512" height="512" alt="Nerve Media" />
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Capability gate + boot safety net (classic script, runs before the module) -->
   <script>
   (function () {
     "use strict";
-    var docEl = document.documentElement;
-    var track = document.getElementById("track");
-    var hint = document.getElementById("hint");
-    window.__laptop = { progress: 0, lidOpen: 0 };
-
-    var reduceMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
-    function clamp01(v){ return v < 0 ? 0 : v > 1 ? 1 : v; }
-    function seg(p,a,b){ return clamp01((p - a) / (b - a)); }
-    function easeInOutCubic(t){ return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; }
-    function easeOutCubic(t){ return 1 - Math.pow(1-t,3); }
-    function lerp(a,b,t){ return a + (b-a)*t; }
-
-    var trackTop = 0, scrollRange = 1;
-    function cacheMetrics(){
-      var r = track.getBoundingClientRect();
-      trackTop = r.top + (window.pageYOffset || docEl.scrollTop || 0);
-      scrollRange = Math.max(1, track.offsetHeight - window.innerHeight);
+    var html = document.documentElement;
+    function webglOK() {
+      try {
+        var c = document.createElement("canvas");
+        return !!(window.WebGLRenderingContext && (c.getContext("webgl2") || c.getContext("webgl")));
+      } catch (e) { return false; }
     }
+    var reduce = false;
+    try { reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+    window.__laptopSupport = { webgl: webglOK(), reduce: reduce };
+    window.__laptopReady = false;
+    if (!window.__laptopSupport.webgl) html.classList.add("is-fallback");
+    // If the module never boots (e.g. CDN blocked), reveal the poster.
+    window.__bootTimer = setTimeout(function () {
+      if (!window.__laptopReady) html.classList.add("is-fallback");
+    }, 4500);
+  })();
+  </script>
 
-    var hintHidden = false;
-    function applyPose(p){
-      var enter = easeOutCubic(seg(p, 0.00, 0.18));
-      var open  = easeInOutCubic(seg(p, 0.18, 0.52));
-      var close = easeInOutCubic(seg(p, 0.68, 1.00));
-
-      var lidOpen;
-      if (p < 0.52) lidOpen = open;          // closed -> open
-      else if (p < 0.68) lidOpen = 1;        // hold open
-      else lidOpen = 1 - close;              // open -> closed
-
-      var opacity = enter;
-      var scale, rise, dolly, sceneShadow, shadowX, glare;
-
-      if (p < 0.18) {                         // appear (closed)
-        scale = lerp(0.88, 1.0, enter);
-        rise  = lerp(46, 0, enter);
-        dolly = 0;
-        sceneShadow = lerp(0.0, 0.5, enter);
-        shadowX = 1.0;
-        glare = 0;
-      } else if (p < 0.52) {                  // opening
-        scale = 1.0; rise = 0; dolly = lerp(0, 30, open);
-        sceneShadow = lerp(0.5, 0.85, open);
-        shadowX = lerp(1.0, 1.1, open);
-        glare = 0.5 * Math.sin(open * Math.PI);
-      } else if (p < 0.68) {                  // hold open
-        scale = 1.0; rise = 0; dolly = 30;
-        sceneShadow = 0.85; shadowX = 1.1; glare = 0.4;
-      } else {                                // closing
-        scale = lerp(1.0, 0.97, close);
-        rise = lerp(0, 6, close);
-        dolly = lerp(30, 0, close);
-        sceneShadow = lerp(0.85, 0.5, close);
-        shadowX = lerp(1.1, 1.0, close);
-        glare = lerp(0.4, 0, close);
-      }
-
-      var r = docEl.style;
-      r.setProperty("--lid-open", lidOpen.toFixed(4));
-      r.setProperty("--opacity", opacity.toFixed(3));
-      r.setProperty("--scale", scale.toFixed(4));
-      r.setProperty("--rise", rise.toFixed(2) + "px");
-      r.setProperty("--dolly", dolly.toFixed(2) + "px");
-      r.setProperty("--shadow", sceneShadow.toFixed(3));
-      r.setProperty("--shadow-x", shadowX.toFixed(4));
-      r.setProperty("--glare", glare.toFixed(3));
-      r.setProperty("--scroll-progress", p.toFixed(3));
-
-      window.__laptop.progress = p;
-      window.__laptop.lidOpen = lidOpen;
-
-      if (!hintHidden && p > 0.012) { hintHidden = true; if (hint) hint.classList.add("is-hidden"); }
-      else if (hintHidden && p <= 0.012) { hintHidden = false; if (hint) hint.classList.remove("is-hidden"); }
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
     }
+  }
+  </script>
 
-    var ticking = false;
-    function update(){
-      ticking = false;
-      var y = window.pageYOffset || docEl.scrollTop || 0;
-      applyPose(clamp01((y - trackTop) / scrollRange));
-    }
-    function onScroll(){ if (!ticking){ ticking = true; requestAnimationFrame(update); } }
+  <script type="module">
+  import * as THREE from "three";
+  import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+  import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+  import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+  import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+  import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
-    var resizePending = false;
-    function onResize(){
-      if (!resizePending){ resizePending = true; requestAnimationFrame(function(){ resizePending = false; cacheMetrics(); update(); }); }
-    }
+  "use strict";
+  const html = document.documentElement;
+  const support = window.__laptopSupport || { webgl: true, reduce: false };
+  const track = document.getElementById("track");
+  const stage = document.getElementById("stage");
+  const canvas = document.getElementById("gl");
+  const veil = document.getElementById("veil");
+  const hint = document.getElementById("hint");
 
-    function applyReducedMotion(){
-      docEl.style.setProperty("--lid-open", "1");
-      docEl.style.setProperty("--scroll-progress", "0.55");
-      window.__laptop.progress = 0.55; window.__laptop.lidOpen = 1;
-      if (hint) hint.classList.add("is-hidden");
+  window.__laptop = { progress: 0, lidOpen: 0, reveal: 0 };
+
+  /* ---------- math helpers (same voice as the previous build) ---------- */
+  const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+  const seg = (p, a, b) => clamp01((p - a) / (b - a));
+  const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  /* ---------- geometry constants (world units) ---------- */
+  const W = 3.0;            // laptop width
+  const D = 2.0;            // deck depth
+  const DECK_T = 0.09;      // deck thickness
+  const LID_H = 1.9;        // lid (screen) height
+  const LID_T = 0.06;       // lid thickness
+  const SCREEN_W = W * 0.9;
+  const SCREEN_H = LID_H * 0.86;
+  const LID_CLOSED = 1.53;  // rad — lid folded flat over the keys
+  const LID_OPEN = -0.20;   // rad — lid upright, reclined slightly back (~101deg from deck)
+
+  /* ---------- scene state ---------- */
+  let renderer, scene, camera, bloomComposer, bloom, glowScene, glowCam;
+  let laptopGroup, lidPivot, screenMat, panelMat, groundMat, keyLight, rimLight;
+  const BLOOM_LAYER = 1;
+  let fitDist = 9;
+  const camDir = new THREE.Vector3(0.0, 0.26, 1).normalize();
+  const target = new THREE.Vector3(0, 0.4, 0);
+  let ready = false, visible = true, textureReady = false, disposed = false;
+
+  const pose = {
+    appearScale: 0.9, riseY: -0.14, appear: 0,
+    lidOpen: 0, dolly: 0, reveal: 0, veil: 1
+  };
+
+  /* ---------- build ---------- */
+  function buildScene() {
+    const lowPower = (window.matchMedia && matchMedia("(pointer: coarse)").matches) ||
+                     ((navigator.hardwareConcurrency || 8) <= 4);
+
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2));
+    renderer.setClearColor(0xffffff, 0);              // transparent → white stage shows through
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    scene = new THREE.Scene();
+    scene.background = null;
+
+    camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+
+    // environment reflections for the aluminium — no asset weight
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmrem.dispose();
+
+    laptopGroup = new THREE.Group();
+    laptopGroup.rotation.y = -0.32;                   // gentle 3/4 turn
+    scene.add(laptopGroup);
+
+    const alu = new THREE.MeshStandardMaterial({ color: 0xd9dbdf, metalness: 0.92, roughness: 0.46, envMapIntensity: 0.85 });
+    const aluDark = new THREE.MeshStandardMaterial({ color: 0x111318, metalness: 0.6, roughness: 0.35, envMapIntensity: 0.7 });
+
+    // deck — top surface at y=0, rear edge at z=-D/2
+    const deck = new THREE.Mesh(new RoundedBoxGeometry(W, DECK_T, D, 5, 0.05), alu);
+    deck.position.y = -DECK_T / 2;
+    deck.castShadow = true; deck.receiveShadow = true;
+    laptopGroup.add(deck);
+
+    // keyboard well + trackpad (subtle darker insets)
+    const well = new THREE.Mesh(new RoundedBoxGeometry(W * 0.82, 0.012, D * 0.52, 4, 0.02), aluDark);
+    well.position.set(0, 0.002, -D * 0.06);
+    laptopGroup.add(well);
+    const pad = new THREE.Mesh(new RoundedBoxGeometry(W * 0.3, 0.012, D * 0.24, 4, 0.02), aluDark);
+    pad.position.set(0, 0.003, D * 0.28);
+    laptopGroup.add(pad);
+
+    // hinge pivot at the shared rear edge
+    lidPivot = new THREE.Group();
+    lidPivot.position.set(0, 0, -D / 2);
+    laptopGroup.add(lidPivot);
+
+    // lid — geometry pushed up so its bottom edge sits on the hinge (local y=0)
+    const lidGeo = new RoundedBoxGeometry(W, LID_H, LID_T, 5, 0.05);
+    lidGeo.translate(0, LID_H / 2, 0);
+    const lid = new THREE.Mesh(lidGeo, alu);
+    lid.castShadow = true; lid.receiveShadow = true;
+    lidPivot.add(lid);
+
+    // dark glass panel on the lid front (+z), always present
+    panelMat = new THREE.MeshStandardMaterial({ color: 0x05060a, metalness: 0.0, roughness: 0.58, envMapIntensity: 0.25, emissive: 0x0a0d13, emissiveIntensity: 0.05 });
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(SCREEN_W, SCREEN_H), panelMat);
+    panel.position.set(0, LID_H / 2, LID_T / 2 + 0.002);
+    lid.add(panel);
+
+    // the wordmark plane — glows in on reveal (texture set once loaded)
+    const side = Math.min(SCREEN_W * 0.82, SCREEN_H * 0.94);
+    screenMat = new THREE.MeshStandardMaterial({
+      color: 0x000000, emissive: 0xffffff, emissiveIntensity: 0,
+      metalness: 0, roughness: 0.5, transparent: true, opacity: 0, depthWrite: false
+    });
+    const wordmark = new THREE.Mesh(new THREE.PlaneGeometry(side, side), screenMat);
+    wordmark.position.set(0, LID_H / 2, LID_T / 2 + 0.004);
+    wordmark.layers.enable(BLOOM_LAYER);   // only this glows in the bloom pass
+    lid.add(wordmark);
+
+    // lighting
+    keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+    keyLight.position.set(2.6, 6.0, 3.4);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(1024, 1024);
+    keyLight.shadow.camera.near = 0.5; keyLight.shadow.camera.far = 22;
+    keyLight.shadow.camera.left = -3.2; keyLight.shadow.camera.right = 3.2;
+    keyLight.shadow.camera.top = 3.2; keyLight.shadow.camera.bottom = -3.2;
+    keyLight.shadow.bias = -0.0006; keyLight.shadow.radius = 3;
+    scene.add(keyLight);
+
+    const fill = new THREE.DirectionalLight(0xffffff, 0.55);
+    fill.position.set(-4, 2, 2.5);
+    scene.add(fill);
+
+    rimLight = new THREE.DirectionalLight(0xffffff, 1.4);
+    rimLight.position.set(-1.5, 3.2, -5);
+    scene.add(rimLight);
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xdfe2e6, 0.35));
+
+    // soft contact shadow on a ground plane
+    groundMat = new THREE.ShadowMaterial({ opacity: 0.0 });
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -DECK_T - 0.001;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // SELECTIVE bloom: render ONLY the wordmark (layer 1) on black to a bloom target,
+    // then add that glow over the transparent base scene. The aluminium body and the
+    // pure-white page are never touched by bloom.
+    bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.0 /*strength*/, 0.4 /*radius*/, 0.0 /*threshold*/);
+    const bloomRP = new RenderPass(scene, camera);
+    bloomRP.clearColor = new THREE.Color(0x000000);
+    bloomRP.clearAlpha = 1;
+    bloomComposer = new EffectComposer(renderer);
+    bloomComposer.renderToScreen = false;
+    bloomComposer.addPass(bloomRP);
+    bloomComposer.addPass(bloom);
+
+    // fullscreen additive quad that overlays the isolated glow onto the canvas
+    glowScene = new THREE.Scene();
+    glowCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    // add ONLY the glow's RGB; never touch the destination alpha, so empty pixels stay
+    // transparent and the pure-white page shows through (plain AdditiveBlending would
+    // force alpha=1 → opaque black background).
+    const glowMat = new THREE.MeshBasicMaterial({
+      map: bloomComposer.renderTarget2.texture,
+      transparent: true, depthTest: false, depthWrite: false,
+      blending: THREE.CustomBlending,
+      blendEquation: THREE.AddEquation,
+      blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor,
+      blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor
+    });
+    glowScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), glowMat));
+
+    // context-loss safety → poster
+    canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); html.classList.add("is-fallback"); }, false);
+  }
+
+  /* ---------- camera fit (aspect-aware → good on desktop AND mobile) ---------- */
+  function computeFit() {
+    lidPivot.rotation.x = LID_OPEN;      // measure at the widest (open) pose
+    laptopGroup.scale.setScalar(1);
+    laptopGroup.position.set(0, 0, 0);
+    laptopGroup.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(laptopGroup);
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    target.copy(sphere.center);
+    const vFov = THREE.MathUtils.degToRad(camera.fov);
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+    const distV = sphere.radius / Math.sin(vFov / 2);
+    const distH = sphere.radius / Math.sin(hFov / 2);
+    const margin = camera.aspect < 1 ? 1.16 : 1.08;   // extra breathing room in portrait
+    fitDist = Math.max(distV, distH) * margin;
+  }
+
+  /* ---------- per-frame pose application ---------- */
+  function renderFrame() {
+    if (!ready || disposed) return;
+    laptopGroup.scale.setScalar(pose.appearScale);
+    laptopGroup.position.set(0, pose.riseY, 0);
+    lidPivot.rotation.x = LID_CLOSED + (LID_OPEN - LID_CLOSED) * pose.lidOpen;
+
+    const d = fitDist * (1 - 0.1 * pose.dolly);
+    camera.position.copy(camDir).multiplyScalar(d).add(target);
+    camera.lookAt(target);
+
+    if (textureReady) {
+      screenMat.opacity = pose.reveal;
+      screenMat.emissiveIntensity = pose.reveal * 1.05;
     }
-    function enableScroll(){
+    panelMat.emissiveIntensity = 0.05 + pose.reveal * 0.08;
+    bloom.strength = pose.reveal * 0.5;
+    groundMat.opacity = 0.34 * pose.appear * (0.55 + 0.45 * pose.lidOpen);
+
+    // subtle lighting choreography as it opens
+    rimLight.intensity = 1.1 + 0.5 * pose.lidOpen;
+    keyLight.intensity = 2.2 + 0.3 * pose.lidOpen;
+
+    veil.style.opacity = pose.veil.toFixed(3);
+
+    // pass 1: isolated wordmark glow → bloom target (black bg)
+    camera.layers.set(BLOOM_LAYER);
+    bloomComposer.render();
+    // pass 2: full scene straight to the transparent canvas → pure-white page shows through
+    // (reset the clear color the bloom pass changed, so the canvas clears transparent-white)
+    camera.layers.set(0);
+    renderer.setRenderTarget(null);
+    renderer.setClearColor(0xffffff, 0);
+    renderer.autoClear = true;
+    renderer.render(scene, camera);
+    // pass 3: add the confined screen glow on top
+    renderer.autoClear = false;
+    renderer.render(glowScene, glowCam);
+    renderer.autoClear = true;
+  }
+
+  let rafId = 0;
+  function scheduleRender() {
+    if (!ready || !visible || document.hidden || disposed) return;
+    if (rafId) return;
+    rafId = requestAnimationFrame(() => { rafId = 0; renderFrame(); });
+  }
+
+  function applyPose(p) {
+    const enter = easeOutCubic(seg(p, 0.0, 0.18));
+    const open = easeInOutCubic(seg(p, 0.18, 0.52));
+    const close = easeInOutCubic(seg(p, 0.68, 1.0));
+
+    const lidOpen = p < 0.52 ? open : p < 0.68 ? 1 : 1 - close;
+    const dolly = lidOpen;   // camera pushes in with the open amount
+
+    let reveal = easeOutCubic(clamp01((lidOpen - 0.62) / (1 - 0.62)));
+    if (p > 0.68) reveal *= 1 - easeInOutCubic(seg(p, 0.72, 0.92));  // dark before it folds shut
+
+    pose.appearScale = lerp(0.9, 1.0, enter);
+    pose.riseY = -(1 - enter) * 0.14;
+    pose.appear = enter;
+    pose.lidOpen = lidOpen;
+    pose.dolly = dolly;
+    pose.reveal = reveal;
+    pose.veil = Math.max(1 - enter, easeInOutCubic(seg(p, 0.95, 1.0)));
+
+    window.__laptop.progress = p;
+    window.__laptop.lidOpen = lidOpen;
+    window.__laptop.reveal = reveal;
+
+    if (hint) {
+      if (p > 0.012) hint.classList.add("is-hidden");
+      else hint.classList.remove("is-hidden");
+    }
+    scheduleRender();
+  }
+
+  /* ---------- wordmark texture (key out the dark background → clean glow) ---------- */
+  function loadLogo() {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const s = 512, cv = document.createElement("canvas");
+        cv.width = cv.height = s;
+        const ctx = cv.getContext("2d");
+        ctx.drawImage(img, 0, 0, s, s);
+        const id = ctx.getImageData(0, 0, s, s), d = id.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const lum = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
+          const a = lum < 0.5 ? 0 : (lum - 0.5) / 0.5;       // keep bright text, drop dark bg
+          d[i] = d[i + 1] = d[i + 2] = 255;
+          d[i + 3] = Math.round(255 * a * (d[i + 3] / 255));
+        }
+        ctx.putImageData(id, 0, 0);
+        const tex = new THREE.CanvasTexture(cv);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+        tex.minFilter = THREE.LinearMipmapLinearFilter;
+        screenMat.map = tex;
+        screenMat.emissiveMap = tex;
+        screenMat.needsUpdate = true;
+        textureReady = true;
+        scheduleRender();
+      } catch (e) { /* leave the screen dark on any failure */ }
+    };
+    img.src = "assets/nerve-media-logo.png";
+  }
+
+  /* ---------- scroll rig (preserved) ---------- */
+  let trackTop = 0, scrollRange = 1;
+  function cacheMetrics() {
+    const r = track.getBoundingClientRect();
+    trackTop = r.top + (window.pageYOffset || 0);
+    scrollRange = Math.max(1, track.offsetHeight - window.innerHeight);
+  }
+  let ticking = false;
+  function update() {
+    ticking = false;
+    const y = window.pageYOffset || 0;
+    applyPose(clamp01((y - trackTop) / scrollRange));
+  }
+  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+
+  let resizePending = false;
+  function onResize() {
+    if (resizePending) return;
+    resizePending = true;
+    requestAnimationFrame(() => { resizePending = false; resize(); });
+  }
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false);       // false → keep CSS 100%/100% (CLS-safe, svh-correct)
+    bloomComposer.setSize(w, h);
+    bloom.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    computeFit();
+    cacheMetrics();
+    scheduleRender();
+  }
+
+  function observeVisibility() {
+    if (!("IntersectionObserver" in window)) { visible = true; return; }
+    const io = new IntersectionObserver((entries) => {
+      visible = entries[0].isIntersecting;
+      if (visible) scheduleRender();
+    }, { threshold: 0 });
+    io.observe(stage);
+  }
+
+  /* ---------- boot ---------- */
+  function start() {
+    if (!support.webgl) return;   // poster already shown by the classic guard
+    buildScene();
+    ready = true;
+    window.__laptopReady = true;
+    clearTimeout(window.__bootTimer);
+    html.classList.remove("is-fallback");
+
+    resize();
+    loadLogo();
+    observeVisibility();
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) scheduleRender(); });
+
+    if (support.reduce) {
+      html.classList.add("is-static");
+      applyPose(0.6);              // a settled, fully-open frame
+      visible = true;
+      renderFrame();
+    } else {
       cacheMetrics();
       window.addEventListener("scroll", onScroll, { passive: true });
       window.addEventListener("resize", onResize);
       window.addEventListener("orientationchange", onResize);
       update();
     }
-    function init(){ if (reduceMQ.matches) applyReducedMotion(); else enableScroll(); }
+  }
 
-    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-    else init();
-  })();
+  try {
+    start();
+  } catch (e) {
+    console.error("[laptop] init failed:", e);
+    html.classList.add("is-fallback");
+  }
   </script>
 </body>
 </html>
