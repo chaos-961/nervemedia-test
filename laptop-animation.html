@@ -490,7 +490,11 @@
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
     const distV = sphere.radius / Math.sin(vFov / 2);
     const distH = sphere.radius / Math.sin(hFov / 2);
-    const margin = camera.aspect < 1 ? 1.06 : 0.98;   // a touch bigger than before
+    // Portrait phones are width-constrained and the bounding sphere is inflated by the
+    // tall open lid, so use a tighter margin there to fill the screen; ease it back as the
+    // viewport widens toward square/landscape.
+    const a = camera.aspect;
+    const margin = a < 0.7 ? 0.74 : a < 1 ? 0.74 + (a - 0.7) / 0.3 * 0.24 : 0.98;
     fitDist = Math.max(distV, distH) * margin;
   }
 
