@@ -8,22 +8,25 @@
 <title>Nerve Media — Laptop</title>
 <style>
   /* ===========================================================
-     A real WebGL (Three.js) aluminium laptop in a soft studio.
-     It APPEARS closed, OPENS on scroll and reveals the Nerve
-     Media wordmark glowing gently on the screen, HOLDS, then
-     CLOSES. A continuous loop adds an idle float, a yaw-sweep as
-     it opens, and mouse parallax. No build step: Three.js loads
-     via a CDN import map. Falls back to a static poster when
-     WebGL / motion is off.
+     A real WebGL (Three.js) aluminium laptop in a soft studio,
+     flanked by a wired mouse and headphones. It APPEARS closed,
+     OPENS on scroll and reveals the Nerve Media wordmark glowing
+     gently on the screen, HOLDS, then CLOSES. A continuous loop
+     adds an idle float, a yaw-sweep as it opens, and mouse
+     parallax. No build step: Three.js loads via a CDN import map.
+     Falls back to a static poster when WebGL / motion is off.
      =========================================================== */
   :root {
     color-scheme: light;
-    /* soft studio backdrop — a gentle spotlight, not flat white */
-    --backdrop: radial-gradient(125% 95% at 50% 14%,
-      #ffffff 0%, #f4f6f9 38%, #e9edf2 72%, #e0e4ea 100%);
+    /* refined studio backdrop — spotlight + a subtle floor + a soft vignette */
+    --backdrop:
+      radial-gradient(70% 52% at 50% 30%, rgba(255,255,255,0.97), rgba(255,255,255,0) 72%),
+      radial-gradient(110% 85% at 50% 122%, rgba(150,160,176,0.26), rgba(150,160,176,0) 60%),
+      radial-gradient(135% 120% at 50% 42%, rgba(28,34,44,0) 62%, rgba(28,34,44,0.07) 100%),
+      linear-gradient(180deg, #eef1f5 0%, #e3e7ed 52%, #d2d7e0 100%);
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: #e7eaef; color: #111; }
+  html, body { margin: 0; padding: 0; background: #e3e7ed; color: #111; }
   body {
     font-family: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -35,22 +38,20 @@
     border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
   }
 
-  .track { position: relative; height: 360vh; background: #e7eaef; }
+  /* shorter track → the animation completes with ~50% less scroll (snappier) */
+  .track { position: relative; height: 240vh; background: #e3e7ed; }
   .stage {
     position: sticky; top: 0; height: 100vh; height: 100svh;
     overflow: hidden; background: var(--backdrop);
   }
 
-  /* WebGL canvas fills the sticky stage */
   #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
-  /* veil matches the backdrop for a seamless fade-in / fade-out */
   .veil {
     position: absolute; inset: 0; background: var(--backdrop);
     pointer-events: none; z-index: 2; opacity: 1;
   }
 
-  /* static poster shown when WebGL is unavailable or the CDN fails to load */
   .poster {
     position: absolute; inset: 0; z-index: 3;
     display: none; place-items: center;
@@ -67,7 +68,6 @@
     filter: drop-shadow(0 0 26px rgba(255, 255, 255, 0.18));
   }
 
-  /* scroll hint */
   .hint {
     position: fixed; left: 50%; top: clamp(16px, 4vh, 40px);
     transform: translateX(-50%);
@@ -87,7 +87,6 @@
     50%     { transform: rotate(45deg) translate(2px,2px); }
   }
 
-  /* fallback / static-frame states collapse the scroll track */
   html.is-fallback #gl,
   html.is-fallback .veil { display: none; }
   html.is-fallback .poster { display: grid; }
@@ -123,7 +122,6 @@
     </div>
   </div>
 
-  <!-- Capability gate + boot safety net (classic script, runs before the module) -->
   <script>
   (function () {
     "use strict";
@@ -181,41 +179,51 @@
   const lerp = (a, b, t) => a + (b - a) * t;
 
   /* ---------- geometry constants (world units) ---------- */
-  const W = 3.0;            // laptop width
-  const D = 2.0;            // deck depth
-  const DECK_T = 0.09;      // deck thickness
-  const LID_H = 1.9;        // lid (screen) height
-  const LID_T = 0.06;       // lid thickness
-  const SCREEN_W = W * 0.855;
-  const SCREEN_H = LID_H * 0.78;
-  const LID_CLOSED = 1.53;  // rad — lid folded flat over the keys
-  const LID_OPEN = -0.20;   // rad — lid upright, reclined slightly back
+  const W = 3.0, D = 2.0, DECK_T = 0.09, LID_H = 1.9, LID_T = 0.06;
+  const SCREEN_W = W * 0.855, SCREEN_H = LID_H * 0.78;
+  const LID_CLOSED = 1.53, LID_OPEN = -0.20;
+  const FLOOR_Y = -DECK_T;
 
   /* ---------- scene state ---------- */
   let renderer, scene, camera, bloomComposer, bloom, glowScene, glowCam;
-  let laptopGroup, lidPivot, screenMat, panelMat, groundMat, keyLight, rimLight;
+  let laptopGroup, coreFloat, accessoryGroup, lidPivot;
+  let screenMat, panelMat, groundMat, keyLight, rimLight;
   const BLOOM_LAYER = 1;
   let fitDist = 9;
   const camDir = new THREE.Vector3(0.0, 0.26, 1).normalize();
   const target = new THREE.Vector3(0, 0.4, 0);
-  const YAW_CLOSED = -0.5, YAW_OPEN = -0.26;              // turns toward the viewer as it opens
+  const YAW_CLOSED = -0.5, YAW_OPEN = -0.26;
   const clock = new THREE.Clock();
-  const ptr = { x: 0, y: 0 }, ptrTarget = { x: 0, y: 0 };  // damped mouse parallax
+  const ptr = { x: 0, y: 0 }, ptrTarget = { x: 0, y: 0 };
   let ready = false, visible = true, textureReady = false, disposed = false;
   let running = false, scrollP = 0;
 
-  const pose = {
-    appearScale: 0.9, riseY: -0.14, appear: 0,
-    lidOpen: 0, dolly: 0, reveal: 0, veil: 1
-  };
+  const pose = { appearScale: 0.9, riseY: -0.14, appear: 0, lidOpen: 0, dolly: 0, reveal: 0, veil: 1 };
 
-  /* ---------- procedural keyboard (recessed tray + individual keys) ---------- */
+  /* shared materials */
+  const M = {};
+  function makeMaterials() {
+    M.alu = new THREE.MeshStandardMaterial({ color: 0xd9dbdf, metalness: 0.92, roughness: 0.46, envMapIntensity: 0.85 });
+    M.dark = new THREE.MeshStandardMaterial({ color: 0x14161a, metalness: 0.3, roughness: 0.5, envMapIntensity: 0.4 });
+    M.key = new THREE.MeshStandardMaterial({ color: 0x1b1e24, metalness: 0.35, roughness: 0.52, envMapIntensity: 0.3 });
+    M.port = new THREE.MeshStandardMaterial({ color: 0x070809, metalness: 0.5, roughness: 0.45, envMapIntensity: 0.3 });
+    M.plastic = new THREE.MeshStandardMaterial({ color: 0xeef0f3, metalness: 0.08, roughness: 0.26, envMapIntensity: 0.9 });
+    M.cable = new THREE.MeshStandardMaterial({ color: 0x0f1114, metalness: 0.2, roughness: 0.6, envMapIntensity: 0.3 });
+    M.pad = new THREE.MeshStandardMaterial({ color: 0x0b0c0f, metalness: 0.1, roughness: 0.7, envMapIntensity: 0.2 });
+  }
+
+  function cable(from, to, sag) {
+    const mid = from.clone().add(to).multiplyScalar(0.5); mid.y -= sag;
+    const curve = new THREE.CatmullRomCurve3([from, mid, to]);
+    return new THREE.Mesh(new THREE.TubeGeometry(curve, 44, 0.014, 6, false), M.cable);
+  }
+
+  /* ---------- keyboard: recessed tray + instanced keycaps + printed legends ---------- */
+  const KB = { x0: -W * 0.4, x1: W * 0.4, z0: -D * 0.3, z1: D * 0.14, cols: 14, rows: 5 };
   function buildKeyboard(group) {
-    const x0 = -W * 0.4, x1 = W * 0.4, z0 = -D * 0.3, z1 = D * 0.14;
-    const cols = 14, rows = 5;
+    const { x0, x1, z0, z1, cols, rows } = KB;
     const cellW = (x1 - x0) / cols, cellD = (z1 - z0) / rows;
-    const gap = 0.16;
-    const keyW = cellW * (1 - gap), keyD = cellD * (1 - gap), keyH = 0.026;
+    const keyW = cellW * 0.84, keyD = cellD * 0.84, keyH = 0.026;
 
     const tray = new THREE.Mesh(
       new RoundedBoxGeometry((x1 - x0) + cellW * 0.6, 0.02, (z1 - z0) + cellD * 2.0, 3, 0.03),
@@ -224,24 +232,99 @@
     tray.receiveShadow = true;
     group.add(tray);
 
-    const keyMat = new THREE.MeshStandardMaterial({ color: 0x1b1e24, metalness: 0.35, roughness: 0.52, envMapIntensity: 0.3 });
     const keyGeo = new RoundedBoxGeometry(keyW, keyH, keyD, 2, Math.min(keyW, keyD) * 0.16);
-    const keys = new THREE.InstancedMesh(keyGeo, keyMat, cols * rows);
+    const keys = new THREE.InstancedMesh(keyGeo, M.key, cols * rows);
     const m = new THREE.Matrix4();
     let i = 0;
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        m.makeTranslation(x0 + cellW * (c + 0.5), keyH / 2 + 0.004, z0 + cellD * (r + 0.5));
-        keys.setMatrixAt(i++, m);
-      }
-    }
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++)
+        keys.setMatrixAt(i++, m.makeTranslation(x0 + cellW * (c + 0.5), keyH / 2 + 0.004, z0 + cellD * (r + 0.5)));
     keys.instanceMatrix.needsUpdate = true;
     group.add(keys);
 
-    // spacebar row in front of the grid
-    const space = new THREE.Mesh(new RoundedBoxGeometry(keyW * 5.4, keyH, keyD, 2, keyD * 0.16), keyMat);
+    const space = new THREE.Mesh(new RoundedBoxGeometry(keyW * 5.4, keyH, keyD, 2, keyD * 0.16), M.key);
     space.position.set((x0 + x1) / 2, keyH / 2 + 0.004, z1 + cellD * 0.85);
     group.add(space);
+
+    // printed legends (one canvas texture, aligned to the grid → 1 draw call)
+    const rowsTxt = [
+      ["esc","F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","⏻"],
+      ["~","1","2","3","4","5","6","7","8","9","0","-","=","del"],
+      ["tab","Q","W","E","R","T","Y","U","I","O","P","[","]","\\"],
+      ["caps","A","S","D","F","G","H","J","K","L",";","'","ret",""],
+      ["sh","Z","X","C","V","B","N","M",",",".","/","sh","◂","▸"]
+    ];
+    const CW = 1400, CH = Math.round(CW * (z1 - z0) / (x1 - x0));
+    const cv = document.createElement("canvas"); cv.width = CW; cv.height = CH;
+    const ctx = cv.getContext("2d");
+    ctx.clearRect(0, 0, CW, CH);
+    ctx.fillStyle = "#c2c7cf";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const fs = Math.round((CH / rows) * 0.34);
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++) {
+        const t = rowsTxt[r][c]; if (!t) continue;
+        ctx.font = (t.length > 2 ? "600 " + Math.round(fs * 0.62) + "px" : "600 " + fs + "px") + " Arial, Helvetica, sans-serif";
+        ctx.fillText(t, (c + 0.5) / cols * CW, (r + 0.5) / rows * CH);
+      }
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = renderer ? Math.min(8, renderer.capabilities.getMaxAnisotropy()) : 4;
+    const legend = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, z1 - z0),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.9, depthWrite: false }));
+    legend.rotation.x = -Math.PI / 2;
+    legend.position.set((x0 + x1) / 2, keyH + 0.006, (z0 + z1) / 2);
+    group.add(legend);
+  }
+
+  /* ---------- side ports / inputs ---------- */
+  function buildPorts(group) {
+    const y = -DECK_T * 0.5;
+    const slot = (x, z, w, h) => {
+      const p = new THREE.Mesh(new RoundedBoxGeometry(0.03, h, w, 2, 0.008), M.port);
+      p.position.set(x, y, z); group.add(p);
+    };
+    slot(W / 2 + 0.002, 0.14, 0.12, 0.032);   // right USB (mouse plugs here)
+    slot(W / 2 + 0.002, -0.10, 0.12, 0.032);  // right USB
+    slot(-W / 2 - 0.002, 0.12, 0.05, 0.05);   // left headphone jack
+    slot(-W / 2 - 0.002, -0.14, 0.12, 0.032); // left USB-C
+  }
+
+  /* ---------- wired mouse (right of the laptop) ---------- */
+  function buildMouse(group) {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new RoundedBoxGeometry(0.44, 0.2, 0.76, 6, 0.085), M.plastic);
+    body.position.y = 0.1; body.castShadow = true; body.receiveShadow = true;
+    g.add(body);
+    const seam = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.02, 0.34), M.dark);
+    seam.position.set(0, 0.205, -0.16); g.add(seam);
+    const wheel = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.03, 0.06), M.dark);
+    wheel.position.set(0, 0.205, -0.26); g.add(wheel);
+    g.position.set(W * 0.74, FLOOR_Y, 0.34);
+    g.rotation.y = -0.14;
+    group.add(g);
+    group.add(cable(new THREE.Vector3(W * 0.74 - 0.02, FLOOR_Y + 0.05, 0.0),
+                    new THREE.Vector3(W / 2 + 0.04, -DECK_T * 0.5, 0.14), 0.14));
+  }
+
+  /* ---------- headphones (left of the laptop) ---------- */
+  function buildHeadphones(group) {
+    const g = new THREE.Group();
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.034, 12, 48, Math.PI), M.dark);
+    g.add(band);
+    for (const sx of [-0.27, 0.27]) {
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.12, 28), M.dark);
+      cup.rotation.x = Math.PI / 2; cup.position.set(sx, -0.02, 0); cup.castShadow = true;
+      g.add(cup);
+      const cushion = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.05, 28), M.pad);
+      cushion.rotation.x = Math.PI / 2; cushion.position.set(sx, -0.02, 0.075);
+      g.add(cushion);
+    }
+    g.position.set(-W * 0.72, FLOOR_Y + 0.19, 0.28);
+    g.rotation.y = 0.5;
+    group.add(g);
+    group.add(cable(new THREE.Vector3(-W * 0.72 + 0.16, FLOOR_Y + 0.04, 0.34),
+                    new THREE.Vector3(-W / 2 - 0.04, -DECK_T * 0.5, 0.12), 0.16));
   }
 
   /* ---------- build ---------- */
@@ -251,7 +334,7 @@
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2));
-    renderer.setClearColor(0xffffff, 0);              // transparent → studio backdrop shows through
+    renderer.setClearColor(0xffffff, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -260,69 +343,61 @@
 
     scene = new THREE.Scene();
     scene.background = null;
-
     camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
 
-    // environment reflections for the aluminium — no asset weight
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     pmrem.dispose();
 
+    makeMaterials();
+
     laptopGroup = new THREE.Group();
     scene.add(laptopGroup);
+    coreFloat = new THREE.Group();        // the laptop — gets the idle float
+    laptopGroup.add(coreFloat);
+    accessoryGroup = new THREE.Group();   // mouse + headphones — stay grounded
+    laptopGroup.add(accessoryGroup);
 
-    const alu = new THREE.MeshStandardMaterial({ color: 0xd9dbdf, metalness: 0.92, roughness: 0.46, envMapIntensity: 0.85 });
+    // deck
+    const deck = new THREE.Mesh(new RoundedBoxGeometry(W, DECK_T, D, 5, 0.05), M.alu);
+    deck.position.y = -DECK_T / 2; deck.castShadow = true; deck.receiveShadow = true;
+    coreFloat.add(deck);
 
-    // deck — top surface at y=0, rear edge at z=-D/2
-    const deck = new THREE.Mesh(new RoundedBoxGeometry(W, DECK_T, D, 5, 0.05), alu);
-    deck.position.y = -DECK_T / 2;
-    deck.castShadow = true; deck.receiveShadow = true;
-    laptopGroup.add(deck);
+    buildKeyboard(coreFloat);
+    buildPorts(coreFloat);
 
-    // keyboard + trackpad
-    buildKeyboard(laptopGroup);
+    // trackpad
     const padFrame = new THREE.Mesh(new RoundedBoxGeometry(W * 0.335, 0.008, D * 0.275, 3, 0.03),
       new THREE.MeshStandardMaterial({ color: 0x9096a0, metalness: 0.5, roughness: 0.5, envMapIntensity: 0.4 }));
-    padFrame.position.set(0, 0.0015, D * 0.32);
-    laptopGroup.add(padFrame);
+    padFrame.position.set(0, 0.0015, D * 0.32); coreFloat.add(padFrame);
     const pad = new THREE.Mesh(new RoundedBoxGeometry(W * 0.32, 0.012, D * 0.26, 3, 0.03),
       new THREE.MeshStandardMaterial({ color: 0xcfd2d6, metalness: 0.45, roughness: 0.4, envMapIntensity: 0.7 }));
-    pad.position.set(0, 0.003, D * 0.32);
-    laptopGroup.add(pad);
+    pad.position.set(0, 0.003, D * 0.32); coreFloat.add(pad);
 
-    // hinge pivot at the shared rear edge
+    // hinge + lid
     lidPivot = new THREE.Group();
     lidPivot.position.set(0, 0, -D / 2);
-    laptopGroup.add(lidPivot);
+    coreFloat.add(lidPivot);
 
-    // lid — geometry pushed up so its bottom edge sits on the hinge (local y=0)
     const lidGeo = new RoundedBoxGeometry(W, LID_H, LID_T, 5, 0.05);
     lidGeo.translate(0, LID_H / 2, 0);
-    const lid = new THREE.Mesh(lidGeo, alu);
+    const lid = new THREE.Mesh(lidGeo, M.alu);
     lid.castShadow = true; lid.receiveShadow = true;
     lidPivot.add(lid);
 
-    const scy = LID_H / 2;   // screen centre on the lid
-
-    // black bezel framing the screen
+    const scy = LID_H / 2;
     const bezel = new THREE.Mesh(new THREE.PlaneGeometry(W * 0.9, LID_H * 0.88),
       new THREE.MeshStandardMaterial({ color: 0x0a0b0d, metalness: 0.2, roughness: 0.5, envMapIntensity: 0.2 }));
-    bezel.position.set(0, scy, LID_T / 2 + 0.001);
-    lid.add(bezel);
+    bezel.position.set(0, scy, LID_T / 2 + 0.001); lid.add(bezel);
 
-    // camera notch
     const notch = new THREE.Mesh(new THREE.CircleGeometry(0.014, 20),
       new THREE.MeshStandardMaterial({ color: 0x05060a, metalness: 0.4, roughness: 0.3, envMapIntensity: 0.3 }));
-    notch.position.set(0, scy + SCREEN_H / 2 + 0.05, LID_T / 2 + 0.003);
-    lid.add(notch);
+    notch.position.set(0, scy + SCREEN_H / 2 + 0.05, LID_T / 2 + 0.003); lid.add(notch);
 
-    // dark glass panel — the "off" screen
     panelMat = new THREE.MeshStandardMaterial({ color: 0x04050a, metalness: 0.0, roughness: 0.55, envMapIntensity: 0.16, emissive: 0x0a0d14, emissiveIntensity: 0.04 });
     const panel = new THREE.Mesh(new THREE.PlaneGeometry(SCREEN_W, SCREEN_H), panelMat);
-    panel.position.set(0, scy, LID_T / 2 + 0.002);
-    lid.add(panel);
+    panel.position.set(0, scy, LID_T / 2 + 0.002); lid.add(panel);
 
-    // the wordmark — glows in on reveal (texture set once loaded)
     const side = Math.min(SCREEN_W * 0.62, SCREEN_H * 0.82);
     screenMat = new THREE.MeshStandardMaterial({
       color: 0x000000, emissive: 0xffffff, emissiveIntensity: 0,
@@ -330,45 +405,39 @@
     });
     const wordmark = new THREE.Mesh(new THREE.PlaneGeometry(side, side), screenMat);
     wordmark.position.set(0, scy, LID_T / 2 + 0.004);
-    wordmark.layers.enable(BLOOM_LAYER);   // only this glows in the bloom pass
+    wordmark.layers.enable(BLOOM_LAYER);
     lid.add(wordmark);
+
+    // accessories
+    buildMouse(accessoryGroup);
+    buildHeadphones(accessoryGroup);
 
     // lighting
     keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
     keyLight.position.set(2.6, 6.0, 3.4);
     keyLight.castShadow = true;
     keyLight.shadow.mapSize.set(1024, 1024);
-    keyLight.shadow.camera.near = 0.5; keyLight.shadow.camera.far = 22;
-    keyLight.shadow.camera.left = -3.2; keyLight.shadow.camera.right = 3.2;
-    keyLight.shadow.camera.top = 3.2; keyLight.shadow.camera.bottom = -3.2;
+    keyLight.shadow.camera.near = 0.5; keyLight.shadow.camera.far = 24;
+    keyLight.shadow.camera.left = -4.2; keyLight.shadow.camera.right = 4.2;
+    keyLight.shadow.camera.top = 3.4; keyLight.shadow.camera.bottom = -3.4;
     keyLight.shadow.bias = -0.0006; keyLight.shadow.radius = 3;
     scene.add(keyLight);
 
     const fill = new THREE.DirectionalLight(0xffffff, 0.55);
-    fill.position.set(-4, 2, 2.5);
-    scene.add(fill);
-
+    fill.position.set(-4, 2, 2.5); scene.add(fill);
     rimLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    rimLight.position.set(-1.5, 3.2, -5);
-    scene.add(rimLight);
-
+    rimLight.position.set(-1.5, 3.2, -5); scene.add(rimLight);
     scene.add(new THREE.HemisphereLight(0xffffff, 0xdfe2e6, 0.35));
 
-    // soft contact shadow on a ground plane
     groundMat = new THREE.ShadowMaterial({ opacity: 0.0 });
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -DECK_T - 0.001;
-    ground.receiveShadow = true;
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), groundMat);
+    ground.rotation.x = -Math.PI / 2; ground.position.y = FLOOR_Y - 0.001; ground.receiveShadow = true;
     scene.add(ground);
 
-    // SELECTIVE bloom: render ONLY the wordmark (layer 1) on black to a bloom target,
-    // then add that glow (RGB only) over the transparent base scene, so the aluminium
-    // body and the studio backdrop are never touched by bloom.
-    bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.0 /*strength*/, 0.35 /*radius*/, 0.0 /*threshold*/);
+    // SELECTIVE bloom (wordmark only) → additive RGB overlay, transparent canvas preserved
+    bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.0, 0.35, 0.0);
     const bloomRP = new RenderPass(scene, camera);
-    bloomRP.clearColor = new THREE.Color(0x000000);
-    bloomRP.clearAlpha = 1;
+    bloomRP.clearColor = new THREE.Color(0x000000); bloomRP.clearAlpha = 1;
     bloomComposer = new EffectComposer(renderer);
     bloomComposer.renderToScreen = false;
     bloomComposer.addPass(bloomRP);
@@ -376,35 +445,32 @@
 
     glowScene = new THREE.Scene();
     glowCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    const glowMat = new THREE.MeshBasicMaterial({
-      map: bloomComposer.renderTarget2.texture,
-      transparent: true, depthTest: false, depthWrite: false,
-      blending: THREE.CustomBlending,
-      blendEquation: THREE.AddEquation,
+    glowScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshBasicMaterial({
+      map: bloomComposer.renderTarget2.texture, transparent: true, depthTest: false, depthWrite: false,
+      blending: THREE.CustomBlending, blendEquation: THREE.AddEquation,
       blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor,
       blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor
-    });
-    glowScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), glowMat));
+    })));
 
-    // context-loss safety → poster
     canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); html.classList.add("is-fallback"); }, false);
   }
 
-  /* ---------- camera fit (aspect-aware → good on desktop AND mobile) ---------- */
+  /* ---------- camera fit (measures the laptop core, so it stays prominent) ---------- */
   function computeFit() {
-    laptopGroup.rotation.set(0, YAW_OPEN, 0);   // measure at the open pose (widest)
+    laptopGroup.rotation.set(0, YAW_OPEN, 0);
+    laptopGroup.scale.setScalar(1); laptopGroup.position.set(0, 0, 0);
+    coreFloat.position.set(0, 0, 0);
     lidPivot.rotation.x = LID_OPEN;
-    laptopGroup.scale.setScalar(1);
-    laptopGroup.position.set(0, 0, 0);
+    accessoryGroup.visible = camera.aspect >= 0.9;   // hide the flanking props on portrait phones
     laptopGroup.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(laptopGroup);
+    const box = new THREE.Box3().setFromObject(coreFloat);
     const sphere = box.getBoundingSphere(new THREE.Sphere());
     target.copy(sphere.center);
     const vFov = THREE.MathUtils.degToRad(camera.fov);
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
     const distV = sphere.radius / Math.sin(vFov / 2);
     const distH = sphere.radius / Math.sin(hFov / 2);
-    const margin = camera.aspect < 1 ? 1.18 : 1.1;   // extra breathing room in portrait
+    const margin = camera.aspect < 1 ? 1.06 : 0.98;   // a touch bigger than before
     fitDist = Math.max(distV, distH) * margin;
   }
 
@@ -413,11 +479,9 @@
     const enter = easeOutCubic(seg(p, 0.0, 0.18));
     const open = easeInOutCubic(seg(p, 0.18, 0.52));
     const close = easeInOutCubic(seg(p, 0.68, 1.0));
-
     const lidOpen = p < 0.52 ? open : p < 0.68 ? 1 : 1 - close;
-
     let reveal = easeOutCubic(clamp01((lidOpen - 0.62) / (1 - 0.62)));
-    if (p > 0.68) reveal *= 1 - easeInOutCubic(seg(p, 0.72, 0.92));  // dark before it folds shut
+    if (p > 0.68) reveal *= 1 - easeInOutCubic(seg(p, 0.72, 0.92));
 
     pose.appearScale = lerp(0.9, 1.0, enter);
     pose.riseY = -(1 - enter) * 0.14;
@@ -441,16 +505,15 @@
   function renderFrame(t) {
     if (!ready || disposed) return;
     const P = pose;
-
-    // subtle life: idle float + micro rotation, scaled by how open it is
     const idleY = Math.sin(t * 0.9) * 0.015 * P.lidOpen;
     const idleRot = Math.sin(t * 0.6) * 0.012 * P.lidOpen;
 
     laptopGroup.scale.setScalar(P.appearScale);
-    laptopGroup.position.set(0, P.riseY + idleY, 0);
+    laptopGroup.position.set(0, P.riseY, 0);
     laptopGroup.rotation.y = lerp(YAW_CLOSED, YAW_OPEN, P.lidOpen) + ptr.x * 0.09 + idleRot;
     laptopGroup.rotation.x = ptr.y * -0.045;
     laptopGroup.rotation.z = idleRot * 0.35;
+    coreFloat.position.y = idleY;
     lidPivot.rotation.x = LID_CLOSED + (LID_OPEN - LID_CLOSED) * P.lidOpen;
 
     const d = fitDist * (1 - 0.08 * P.dolly);
@@ -464,46 +527,40 @@
     }
     panelMat.emissiveIntensity = 0.04 + P.reveal * 0.05;
     bloom.strength = P.reveal * 0.22;
-    groundMat.opacity = 0.32 * P.appear * (0.5 + 0.5 * P.lidOpen);
-
+    groundMat.opacity = 0.36 * P.appear * (0.5 + 0.5 * P.lidOpen);
     rimLight.intensity = 1.0 + 0.5 * P.lidOpen;
     keyLight.intensity = 2.0 + 0.3 * P.lidOpen;
 
     veil.style.opacity = P.veil.toFixed(3);
 
-    // pass 1: isolated wordmark glow → bloom target (black bg)
     camera.layers.set(BLOOM_LAYER);
     bloomComposer.render();
-    // pass 2: full scene straight to the transparent canvas → studio backdrop shows through
-    // (reset the clear colour the bloom pass changed so the canvas clears transparent)
     camera.layers.set(0);
     renderer.setRenderTarget(null);
     renderer.setClearColor(0xffffff, 0);
     renderer.autoClear = true;
     renderer.render(scene, camera);
-    // pass 3: add the confined screen glow (RGB only) on top
     renderer.autoClear = false;
     renderer.render(glowScene, glowCam);
     renderer.autoClear = true;
   }
 
-  /* ---------- continuous animation loop (while visible) ---------- */
+  /* ---------- continuous loop (while visible) ---------- */
   function frame() {
     if (!running || disposed) return;
     applyPose(scrollP);
-    ptr.x += (ptrTarget.x - ptr.x) * 0.06;      // damp parallax toward the pointer
+    ptr.x += (ptrTarget.x - ptr.x) * 0.06;
     ptr.y += (ptrTarget.y - ptr.y) * 0.06;
     renderFrame(clock.getElapsedTime());
   }
   function startLoop() { if (running || !ready) return; running = true; renderer.setAnimationLoop(frame); }
   function stopLoop() { if (!running) return; running = false; renderer.setAnimationLoop(null); }
-
   function onPointerMove(e) {
     ptrTarget.x = (e.clientX / window.innerWidth) * 2 - 1;
     ptrTarget.y = (e.clientY / window.innerHeight) * 2 - 1;
   }
 
-  /* ---------- wordmark texture (key out the dark background → clean glow) ---------- */
+  /* ---------- wordmark texture (key out dark bg → clean glow) ---------- */
   function loadLogo() {
     const img = new Image();
     img.onload = () => {
@@ -515,7 +572,7 @@
         const id = ctx.getImageData(0, 0, s, s), d = id.data;
         for (let i = 0; i < d.length; i += 4) {
           const lum = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
-          const a = lum < 0.5 ? 0 : (lum - 0.5) / 0.5;       // keep bright text, drop dark bg
+          const a = lum < 0.5 ? 0 : (lum - 0.5) / 0.5;
           d[i] = d[i + 1] = d[i + 2] = 255;
           d[i + 3] = Math.round(255 * a * (d[i + 3] / 255));
         }
@@ -524,9 +581,7 @@
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
         tex.minFilter = THREE.LinearMipmapLinearFilter;
-        screenMat.map = tex;
-        screenMat.emissiveMap = tex;
-        screenMat.needsUpdate = true;
+        screenMat.map = tex; screenMat.emissiveMap = tex; screenMat.needsUpdate = true;
         textureReady = true;
         if (!running) renderFrame(clock.getElapsedTime());
       } catch (e) { /* leave the screen dark on any failure */ }
@@ -541,9 +596,7 @@
     trackTop = r.top + (window.pageYOffset || 0);
     scrollRange = Math.max(1, track.offsetHeight - window.innerHeight);
   }
-  function onScroll() {
-    scrollP = clamp01(((window.pageYOffset || 0) - trackTop) / scrollRange);
-  }
+  function onScroll() { scrollP = clamp01(((window.pageYOffset || 0) - trackTop) / scrollRange); }
 
   let resizePending = false;
   function onResize() {
@@ -553,7 +606,7 @@
   }
   function resize() {
     const w = stage.clientWidth, h = stage.clientHeight;
-    renderer.setSize(w, h, false);       // false → keep CSS 100%/100% (CLS-safe, svh-correct)
+    renderer.setSize(w, h, false);
     bloomComposer.setSize(w, h);
     bloom.setSize(w, h);
     camera.aspect = w / h;
@@ -576,7 +629,7 @@
 
   /* ---------- boot ---------- */
   function start() {
-    if (!support.webgl) return;   // poster already shown by the classic guard
+    if (!support.webgl) return;
     buildScene();
     ready = true;
     window.__laptopReady = true;
@@ -593,19 +646,14 @@
 
     if (support.reduce) {
       html.classList.add("is-static");
-      scrollP = 0.6;
-      applyPose(0.6);              // a settled, fully-open frame
-      visible = true;
-      renderFrame(0);
+      scrollP = 0.6; applyPose(0.6); visible = true; renderFrame(0);
     } else {
-      cacheMetrics();
-      onScroll();
+      cacheMetrics(); onScroll();
       window.addEventListener("scroll", onScroll, { passive: true });
       window.addEventListener("resize", onResize);
       window.addEventListener("orientationchange", onResize);
-      if (window.matchMedia && matchMedia("(pointer: fine)").matches) {
+      if (window.matchMedia && matchMedia("(pointer: fine)").matches)
         window.addEventListener("pointermove", onPointerMove, { passive: true });
-      }
       startLoop();
     }
   }
