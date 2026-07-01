@@ -1,4 +1,31 @@
 <!DOCTYPE html>
+<!--
+  CEDAR & STEAM — MENU TEMPLATE · EDITING GUIDE (no build step; everything lives in this file)
+
+  ADD AN ITEM       Copy any <li class="item"> block inside a section's <ul class="items">
+                    and edit the name / price / description. Keep the aria-hidden leader span.
+  ADD A SECTION     Copy a whole <section class="section"> block. Give the section a unique
+                    id (id="sec-yourname") and its heading a matching id ("sec-yourname-title",
+                    referenced by aria-labelledby). Drop a 64×64 emblem SVG in assets/menu/
+                    (match the house stroke style) and add an <a href="#sec-yourname"> chip
+                    to the ribbon <nav> near the top of <body>. Mirror the section in the
+                    JSON-LD menu in <head> if you care about search.
+  CHANGE HOURS      Edit data-open / data-close on <p class="hero__meta"> (24h "HH:MM").
+                    The static text inside it is the no-JS fallback — keep it in sync, along
+                    with the footer Hours block and the JSON-LD "openingHours".
+  SOLD OUT (86)     Add data-86 to the item's <li> — the price is replaced by "86'd" and the
+                    row dims. For screen readers, also add aria-label="sold out" to that
+                    item's <span class="item__price">.
+  WEEKLY SPOTLIGHT  Search for "THIS WEEK'S POUR-OVER" — one line, edit freely.
+  ITEM TAGS         Available badges: V (vegan), GF (gluten-free), ★ house (favourite).
+                    Copy a <span class="tag"> next to an item name; use them sparingly.
+  THEME DEFAULT     Order: saved choice → time of day (17:00–07:00 = evening) → OS setting.
+                    The hours live in the small script at the top of <head>.
+  CURRENCY          Prices are plain text in USD. An optional USD ⇄ LBP toggle ships
+                    commented out at the bottom of <body>. It needs data-rate on <body> kept
+                    current — LBP rates drift fast, so leave it off unless the client commits
+                    to maintaining it. Static USD stays the no-JS truth either way.
+-->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -9,8 +36,12 @@
     <title>Cedar &amp; Steam — Menu</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fraunces with the SOFT + WONK variable axes (the hand-set warmth this face
+         is known for). Tradeoff: the variable file is heavier than the static cuts
+         (~+40–60KB) — accepted for the craft gain. If this URL ever 400s, fall back
+         to the plain ital,opsz,wght request and drop the font-variation-settings. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,400..700,0..100,0..1;1,9..144,400..600,0..100,0..1&family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -27,6 +58,7 @@
         --line: rgba(36, 28, 21, 0.16);
         --line-soft: rgba(36, 28, 21, 0.10);
         --leader: rgba(36, 28, 21, 0.30);
+        --leader-strong: rgba(36, 28, 21, 0.50);
         --brass: #a8703e;        /* primary accent */
         --brass-deep: #855327;
         --cedar: #5c7458;        /* secondary accent (cedar green) */
@@ -50,13 +82,14 @@
         --line: rgba(244, 235, 221, 0.16);
         --line-soft: rgba(244, 235, 221, 0.08);
         --leader: rgba(244, 235, 221, 0.26);
+        --leader-strong: rgba(244, 235, 221, 0.46);
         --brass: #d99f63;
         --brass-deep: #e6b077;
         --cedar: #8ba883;
         --shadow: 0 40px 84px -44px rgba(0, 0, 0, 0.78);
       }
-      [data-theme="dark"] body {
-        background-color: #140d08;
+      [data-theme="dark"] body { background-color: #140d08; }
+      [data-theme="dark"] .backdrop {
         background-image:
           radial-gradient(88% 58% at 50% -10%, rgba(184, 124, 70, 0.16), rgba(184, 124, 70, 0) 55%),
           radial-gradient(70% 48% at 50% 40%, rgba(150, 100, 56, 0.10), rgba(150, 100, 56, 0) 62%),
@@ -76,6 +109,12 @@
           #372b21;
         border-color: rgba(230, 176, 119, 0.42);
         box-shadow: 0 26px 52px -34px rgba(0, 0, 0, 0.82);
+        animation: candle 5.2s ease-in-out infinite;
+      }
+      /* Candle flicker — Evening only, signature card only. Felt, not seen. */
+      @keyframes candle {
+        0%, 100% { box-shadow: 0 26px 52px -34px rgba(0, 0, 0, 0.82); }
+        50%      { box-shadow: 0 26px 58px -32px rgba(0, 0, 0, 0.88), 0 0 42px -18px rgba(230, 176, 119, 0.22); }
       }
 
       * { box-sizing: border-box; }
@@ -89,23 +128,31 @@
         line-height: 1.6;
         -webkit-font-smoothing: antialiased;
         text-rendering: optimizeLegibility;
-        /* warm textured "tabletop" behind the menu card */
         background-color: #e7d9c0;
-        background-image:
-          radial-gradient(85% 55% at 50% -8%, rgba(255, 251, 242, 0.75), rgba(255, 251, 242, 0) 55%),
-          radial-gradient(130% 100% at 50% 118%, rgba(120, 88, 48, 0.18), rgba(120, 88, 48, 0) 55%),
-          radial-gradient(120% 90% at 50% -12%, #f1e7d4 0%, #e7d9c0 58%, #d8c6a6 100%);
-        background-attachment: fixed;
         min-height: 100vh;
         padding: clamp(0px, 3vw, 48px) clamp(0px, 3vw, 40px);
       }
 
-      /* Fine paper grain over everything */
+      /* Warm textured "tabletop" behind the menu card. Lives on its own fixed
+         layer because iOS Safari ignores background-attachment: fixed on body —
+         this keeps the tabletop pinned while the sheet scrolls over it. */
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image:
+          radial-gradient(85% 55% at 50% -8%, rgba(255, 251, 242, 0.75), rgba(255, 251, 242, 0) 55%),
+          radial-gradient(130% 100% at 50% 118%, rgba(120, 88, 48, 0.18), rgba(120, 88, 48, 0) 55%),
+          radial-gradient(120% 90% at 50% -12%, #f1e7d4 0%, #e7d9c0 58%, #d8c6a6 100%);
+      }
+
+      /* Fine paper grain over everything (above the backdrop, below the sheet) */
       body::before {
         content: "";
         position: fixed;
         inset: 0;
-        z-index: 0;
+        z-index: 1;
         pointer-events: none;
         opacity: 0.05;
         mix-blend-mode: multiply;
@@ -115,7 +162,7 @@
       /* ---------- The menu sheet ---------- */
       .page {
         position: relative;
-        z-index: 1;
+        z-index: 2;
         max-width: var(--measure);
         margin: 0 auto;
         background: var(--paper);
@@ -137,6 +184,60 @@
         z-index: 0;
       }
       .page > * { position: relative; z-index: 1; }
+
+      /* Tri-fold creases — the sheet was folded in thirds. Kept faint. */
+      .page-crease {
+        position: absolute;
+        z-index: 0;
+        top: clamp(9px, 1.6vw, 16px);
+        bottom: clamp(9px, 1.6vw, 16px);
+        width: 3px;
+        opacity: 0.6;
+        pointer-events: none;
+        background: linear-gradient(90deg, rgba(36, 28, 21, 0.10), rgba(255, 255, 255, 0.35) 60%, transparent);
+      }
+      .page-crease--1 { left: 33.4%; }
+      .page-crease--2 { left: 66.7%; }
+      [data-theme="dark"] .page-crease {
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.35), rgba(244, 235, 221, 0.06) 60%, transparent);
+      }
+      @media (max-width: 719px) {
+        .page-crease { display: none; }
+      }
+
+      /* Dog-ear: the sheet's folded corner. Pure decoration — first on the
+         chopping block if the page ever feels busy. */
+      .page-fold {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+        width: 34px;
+        height: 34px;
+        pointer-events: none;
+      }
+      .page-fold::before,
+      .page-fold::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+      }
+      /* lifted flap with a 1px brass hypotenuse */
+      .page-fold::before {
+        background: linear-gradient(135deg, var(--paper-band) calc(50% - 1.5px), rgba(168, 112, 62, 0.55) calc(50% - 1.5px) 50%, transparent 50%);
+        filter: drop-shadow(-2px -2px 8px rgba(36, 28, 21, 0.20));
+      }
+      /* soft shading where the paper lifts away */
+      .page-fold::after {
+        background: linear-gradient(135deg, transparent 50%, rgba(36, 28, 21, 0.12) calc(50% + 1px), transparent 76%);
+      }
+      [data-theme="dark"] .page-fold::before {
+        background: linear-gradient(135deg, #372b21 calc(50% - 1.5px), rgba(217, 159, 99, 0.40) calc(50% - 1.5px) 50%, transparent 50%);
+        filter: drop-shadow(-2px -2px 8px rgba(0, 0, 0, 0.55));
+      }
+      [data-theme="dark"] .page-fold::after {
+        background: linear-gradient(135deg, transparent 50%, rgba(0, 0, 0, 0.35) calc(50% + 1px), transparent 76%);
+      }
 
       /* faint roasted-bean accents in the sheet corners */
       .page::after {
@@ -183,6 +284,9 @@
         font-weight: 500;
         line-height: 0.98;
         letter-spacing: -0.015em;
+        text-wrap: balance;
+        /* Fraunces SOFT axis: hand-set warmth at display size */
+        font-variation-settings: "SOFT" 60;
       }
       .hero__title .amp {
         font-style: italic;
@@ -190,6 +294,26 @@
         color: var(--brass);
         padding: 0 0.06em;
       }
+      .hero__title .amp,
+      .hero__tagline {
+        font-variation-settings: "SOFT" 80, "WONK" 1;
+      }
+
+      /* Hero "ink" reveal — the title prints onto the sheet as the preloader
+         wipe lifts. Static under no-JS, reduced motion, and print. */
+      .js .hero__kicker,
+      .js .hero__title,
+      .js .hero__tagline {
+        clip-path: inset(0);
+      }
+      .js.is-loading .hero__kicker,
+      .js.is-loading .hero__title,
+      .js.is-loading .hero__tagline {
+        clip-path: inset(0 0 100% 0);
+      }
+      .js .hero__title { transition: clip-path 900ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+      .js .hero__kicker { transition: clip-path 900ms cubic-bezier(0.2, 0.7, 0.2, 1) 90ms; }
+      .js .hero__tagline { transition: clip-path 900ms cubic-bezier(0.2, 0.7, 0.2, 1) 180ms; }
 
       .hero__tagline {
         margin: clamp(16px, 2.6vw, 22px) auto 0;
@@ -211,6 +335,36 @@
         text-transform: uppercase;
       }
 
+      /* Open-now dot (set live by JS; static text is the no-JS fallback) */
+      .hero__meta-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        margin-right: 9px;
+        border-radius: 50%;
+        background: var(--muted);
+        vertical-align: 1px;
+      }
+      .hero__meta-dot.is-open { background: var(--cedar); }
+
+      /* Rubber stamp — deliberately kept in print output: it's a print artifact. */
+      .stamp {
+        position: absolute;
+        top: clamp(-6px, 0.5vw, 4px);
+        right: clamp(-8px, 0.5vw, 2px);
+        width: clamp(88px, 18vw, 120px);
+        height: auto;
+        transform: rotate(-8deg);
+        opacity: 0.5;
+        mix-blend-mode: multiply;
+        color: var(--cedar);
+        pointer-events: none;
+      }
+      [data-theme="dark"] .stamp {
+        mix-blend-mode: screen;
+        opacity: 0.35;
+      }
+
       /* Ornamental divider */
       .ornament {
         display: block;
@@ -223,8 +377,13 @@
 
       /* ---------- Sections ---------- */
       .menu { margin: 0; }
+      .menu:focus { outline: none; } /* skip-link target */
 
       .section { margin-top: clamp(40px, 6vw, 62px); }
+
+      /* ribbon anchors land with breathing room under the fixed strip */
+      .section,
+      .signature { scroll-margin-top: 84px; }
 
       .section__head {
         display: flex;
@@ -243,11 +402,18 @@
         background: radial-gradient(circle at 50% 44%, rgba(168, 112, 62, 0.17), rgba(168, 112, 62, 0.05) 60%, rgba(168, 112, 62, 0) 72%);
         box-shadow: inset 0 0 0 1px rgba(168, 112, 62, 0.22);
         margin-inline-start: -2px;
+        transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      /* a nod, not a dance — and only for fine pointers */
+      @media (hover: hover) and (pointer: fine) {
+        .section__head:hover .section__emblem { transform: rotate(-4deg); }
       }
 
       /* External <img> SVGs can't inherit currentColor — brighten the fixed
          brass so illustrations match the lighter accent in the Evening theme. */
       [data-theme="dark"] .section__emblem,
+      [data-theme="dark"] .ribbon__link img,
       [data-theme="dark"] .signature__art img { filter: brightness(1.42) saturate(0.92); }
       [data-theme="dark"] .page::after { filter: brightness(1.4); }
 
@@ -266,6 +432,7 @@
         font-size: clamp(1.45rem, 4.4vw, 1.95rem);
         font-weight: 600;
         letter-spacing: -0.005em;
+        text-wrap: balance;
       }
 
       .section__rule {
@@ -318,6 +485,7 @@
         border-bottom: 1px dotted var(--leader);
         transform: translateY(-0.32em);
         min-width: 18px;
+        transition: border-color 0.25s ease;
       }
 
       .item__price {
@@ -328,7 +496,12 @@
         font-size: 1.02rem;
         font-weight: 600;
         color: var(--brass-deep);
+        transition: transform 0.25s ease;
       }
+
+      /* price leans toward the reader, leader dots darken */
+      .item:hover .item__price { transform: translateX(-2px); }
+      .item:hover .item__leader { border-bottom-color: var(--leader-strong); }
 
       .item__desc {
         margin: 5px 0 0;
@@ -336,6 +509,55 @@
         color: var(--ink-soft);
         font-size: 0.92rem;
         line-height: 1.55;
+        text-wrap: pretty;
+      }
+
+      /* "This week's pour-over" spotlight chip */
+      .item__origin {
+        margin: 7px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--cedar);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .item__origin svg { width: 11px; height: 11px; flex: 0 0 auto; }
+
+      /* Letterpress item tags: V · GF · ★ house */
+      .tag {
+        display: inline-block;
+        margin-inline-start: 2px;
+        padding: 1px 5px;
+        border: 1px solid rgba(168, 112, 62, 0.45);
+        border-radius: 2px;
+        color: var(--muted);
+        font-family: var(--sans);
+        font-size: 0.55rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      /* "86'd" sold-out state — add data-86 to an .item <li> (see guide up top) */
+      .item[data-86] .item__name {
+        text-decoration: line-through;
+        text-decoration-color: rgba(168, 112, 62, 0.6);
+        opacity: 0.55;
+      }
+      .item[data-86] .item__desc { opacity: 0.45; }
+      .item[data-86] .item__price { position: relative; color: transparent; }
+      .item[data-86] .item__price::after {
+        content: "86'd";
+        position: absolute;
+        inset: 0;
+        color: var(--muted);
+        font-size: 0.78em;
+        letter-spacing: 0.12em;
+        text-align: right;
       }
 
       /* two-column spread on wider screens (>=720px keeps columns wide enough
@@ -390,7 +612,9 @@
         font-weight: 600;
         line-height: 1.05;
         letter-spacing: -0.01em;
+        text-wrap: balance;
       }
+      .signature__title .tag { vertical-align: 0.45em; }
 
       .signature__desc {
         margin: clamp(10px, 2vw, 14px) auto 0;
@@ -460,6 +684,26 @@
         line-height: 1.55;
       }
 
+      .footer__legend {
+        display: inline-block;
+        margin-top: 6px;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+      }
+
+      /* edition mark — an honest "how stale is this?" hint, print-style */
+      .footer__edition {
+        margin: 12px auto 0;
+        color: var(--muted);
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      /* print-only slot (markup ships commented out in the footer) */
+      .footer__print-only { display: none; }
+
       a {
         color: var(--brass-deep);
         text-decoration-thickness: 1px;
@@ -471,12 +715,166 @@
         border-radius: 2px;
       }
 
+      /* ---------- Skip link (keyboard) ---------- */
+      .skip-link {
+        position: fixed;
+        top: 8px;
+        left: 8px;
+        z-index: 60;
+        padding: 10px 16px;
+        border: 1px solid rgba(168, 112, 62, 0.42);
+        border-radius: 3px;
+        background: var(--card);
+        color: var(--ink);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transform: translateY(-180%);
+        transition: transform 220ms ease;
+      }
+      .skip-link:focus-visible {
+        transform: translateY(0);
+        outline: 2px solid var(--ink);
+        outline-offset: 3px;
+      }
+
+      /* ---------- Tasting ribbon (fixed section nav) ---------- */
+      .ribbon {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 30;
+        max-width: var(--measure);
+        margin: 0 auto;
+        background: var(--card);
+        border-bottom: 1px solid rgba(168, 112, 62, 0.3);
+        box-shadow: 0 8px 24px -18px rgba(40, 26, 12, 0.9);
+      }
+      .ribbon[hidden] { display: none; }
+      .js .ribbon { animation: ribbonIn 220ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+      @keyframes ribbonIn {
+        from { opacity: 0; transform: translateY(-12px); }
+      }
+
+      .ribbon__track {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        gap: 4px;
+        padding: 0 16px;
+        max-width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+        justify-content: flex-start;
+        justify-content: safe center;
+        -webkit-mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+        mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+      }
+      .ribbon__track::-webkit-scrollbar { display: none; }
+
+      /* while the strip shares the viewport edge with the floating theme
+         toggle (< ~940px), keep chips + fade clear of it */
+      @media (max-width: 940px) {
+        .ribbon__track {
+          padding-inline-end: 96px;
+          -webkit-mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 96px), transparent calc(100% - 52px));
+          mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 96px), transparent calc(100% - 52px));
+        }
+      }
+
+      .ribbon__link {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 15px 10px 13px; /* ≥44px hit area */
+        white-space: nowrap;
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: color 0.25s ease;
+      }
+      .ribbon__link:hover,
+      .ribbon__link[aria-current="true"] { color: var(--brass-deep); }
+      .ribbon__link:active { transform: scale(0.96); }
+      .ribbon__link:focus-visible {
+        outline: 2px solid var(--ink);
+        outline-offset: -3px;
+        border-radius: 2px;
+      }
+      .ribbon__link img,
+      .ribbon__glyph {
+        width: 16px;
+        height: 16px;
+        flex: 0 0 auto;
+      }
+      .ribbon__glyph { color: var(--brass); }
+
+      /* one moving element: the brass ink underline (60px base, scaled) */
+      .ribbon__ink {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 60px;
+        height: 2px;
+        background: var(--brass);
+        transform-origin: 0 0;
+        transition: transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
+        opacity: 0;
+      }
+      .ribbon.is-spied .ribbon__ink { opacity: 1; }
+
+      /* ---------- Back-to-top bean ---------- */
+      .to-top {
+        position: fixed;
+        right: clamp(12px, 3vw, 22px);
+        bottom: clamp(14px, 3vw, 24px);
+        z-index: 30;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid rgba(168, 112, 62, 0.42);
+        background: var(--card);
+        color: var(--brass-deep);
+        cursor: pointer;
+        box-shadow: 0 10px 26px -14px rgba(60, 40, 20, 0.65);
+        transition: transform 0.2s ease;
+      }
+      .to-top[hidden] { display: none; }
+      .js .to-top { animation: toTopIn 220ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+      @keyframes toTopIn {
+        from { opacity: 0; transform: translateY(10px); }
+      }
+      .to-top:hover { transform: translateY(-2px); }
+      .to-top:active { transform: scale(0.94); }
+      .to-top:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+      .to-top svg { width: 20px; height: 20px; display: block; }
+
+      /* invisible marker 2 viewports down — IO flips the bean on/off, no scroll listener */
+      .to-top-sentinel {
+        position: absolute;
+        top: 200vh;
+        left: 0;
+        width: 1px;
+        height: 1px;
+        pointer-events: none;
+      }
+
       /* ---------- Evening / Day toggle ---------- */
       .theme-toggle {
         position: fixed;
         top: clamp(12px, 3vw, 22px);
         right: clamp(12px, 3vw, 22px);
-        z-index: 20;
+        z-index: 40; /* above the ribbon strip */
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -503,12 +901,36 @@
         opacity: 0;
         transform: translateY(20px);
         transition: opacity 0.7s ease, transform 0.75s cubic-bezier(0.2, 0.7, 0.2, 1);
+        transition-delay: var(--reveal-delay, 0ms); /* set per batch by JS */
         will-change: opacity, transform;
       }
       .js [data-reveal].is-visible {
         opacity: 1;
         transform: none;
       }
+
+      /* items cascade inside their revealed section (capped at 5 steps) */
+      .js .section[data-reveal] .item {
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.6s ease, transform 0.65s cubic-bezier(0.2, 0.7, 0.2, 1);
+      }
+      .js .section[data-reveal].is-visible .item {
+        opacity: 1;
+        transform: none;
+      }
+      .js .section[data-reveal].is-visible .item:nth-child(1) { transition-delay: calc(var(--reveal-delay, 0ms) + 60ms); }
+      .js .section[data-reveal].is-visible .item:nth-child(2) { transition-delay: calc(var(--reveal-delay, 0ms) + 120ms); }
+      .js .section[data-reveal].is-visible .item:nth-child(3) { transition-delay: calc(var(--reveal-delay, 0ms) + 180ms); }
+      .js .section[data-reveal].is-visible .item:nth-child(4) { transition-delay: calc(var(--reveal-delay, 0ms) + 240ms); }
+      .js .section[data-reveal].is-visible .item:nth-child(n + 5) { transition-delay: calc(var(--reveal-delay, 0ms) + 300ms); }
+
+      /* dot leaders draw in toward the price on reveal */
+      .js [data-reveal] .item__leader {
+        clip-path: inset(0 100% 0 0);
+        transition: border-color 0.25s ease, clip-path 700ms cubic-bezier(0.2, 0.7, 0.2, 1) 250ms;
+      }
+      .js [data-reveal].is-visible .item__leader { clip-path: inset(0 0 0 0); }
 
       /* ---------- Rising steam on the hero cup ---------- */
       .hero__steam path {
@@ -557,6 +979,13 @@
       }
       .preloader__word .amp { font-style: italic; font-weight: 400; color: var(--brass); padding: 0 0.05em; }
 
+      /* the wordmark settles (tracked-out → normal) once fonts resolve */
+      .js .preloader__word {
+        letter-spacing: 0.18em;
+        transition: letter-spacing 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+      }
+      .js .preloader__word.is-set { letter-spacing: -0.01em; }
+
       .preloader__bar {
         position: relative;
         width: clamp(130px, 44vw, 200px);
@@ -597,12 +1026,35 @@
         html { scroll-behavior: auto; }
         * { transition: none !important; animation: none !important; }
         .js [data-reveal] { opacity: 1 !important; transform: none !important; }
+        .js .section[data-reveal] .item { opacity: 1 !important; transform: none !important; }
+        .js [data-reveal] .item__leader { clip-path: none !important; }
+        .js .hero__kicker,
+        .js .hero__title,
+        .js .hero__tagline { clip-path: none !important; }
+        .js .preloader__word { letter-spacing: -0.01em !important; }
         .theme-toggle:hover { transform: none; }
         .preloader__fill { transform: none; opacity: 1; }
       }
 
+      /* higher-contrast hairlines + leader dots on request */
+      @media (prefers-contrast: more) {
+        :root {
+          --line: rgba(36, 28, 21, 0.22);
+          --line-soft: rgba(36, 28, 21, 0.14);
+          --leader: rgba(36, 28, 21, 0.42);
+          --leader-strong: rgba(36, 28, 21, 0.62);
+        }
+        [data-theme="dark"] {
+          --line: rgba(244, 235, 221, 0.22);
+          --line-soft: rgba(244, 235, 221, 0.12);
+          --leader: rgba(244, 235, 221, 0.36);
+          --leader-strong: rgba(244, 235, 221, 0.58);
+        }
+      }
+
       /* ---------- Print: elegant ink-on-paper ---------- */
       @media print {
+        @page { margin: 12mm; }
         :root,
         [data-theme="dark"] {
           --paper: #ffffff;
@@ -614,13 +1066,14 @@
           --line: rgba(0, 0, 0, 0.22);
           --line-soft: rgba(0, 0, 0, 0.1);
           --leader: rgba(0, 0, 0, 0.35);
+          --leader-strong: rgba(0, 0, 0, 0.5);
           --brass: #7a4b2b;
           --brass-deep: #6a3f22;
           --cedar: #4f6b4a;
           --shadow: none;
         }
         body { background: #fff !important; padding: 0; }
-        body::before { display: none; }
+        body::before, .backdrop { display: none; }
         .page {
           max-width: none;
           border-radius: 0;
@@ -629,10 +1082,21 @@
         }
         .page::before { inset: 6px; }
         .page::after { display: none; }
-        .theme-toggle, .preloader { display: none !important; }
+        /* screen chrome + screen-only paper props go; the stamp stays — it's a print artifact */
+        .theme-toggle, .preloader, .skip-link, .ribbon, .to-top,
+        .page-fold, .page-crease, .hero__meta-dot { display: none !important; }
         .js [data-reveal] { opacity: 1 !important; transform: none !important; }
+        .js .section[data-reveal] .item { opacity: 1 !important; transform: none !important; }
+        .js [data-reveal] .item__leader { clip-path: none !important; }
+        .js .hero__kicker, .js .hero__title, .js .hero__tagline { clip-path: none !important; }
         .hero__steam path { animation: none; opacity: 0.7; }
         .hero, .signature, .section, .item, .footer { break-inside: avoid; }
+        /* paper is wide — keep split lists two-up */
+        .items--split {
+          grid-template-columns: 1fr 1fr;
+          column-gap: 24pt;
+        }
+        .footer__print-only { display: block; }
       }
     </style>
     <script>
@@ -641,9 +1105,14 @@
       (function () {
         var root = document.documentElement;
         root.classList.add("js", "is-loading");
+        /* Theme default: saved choice → time of day (17:00–07:00 = a café that
+           lights candles in the evening) → OS preference → light. */
         var saved = null;
         try { saved = localStorage.getItem("cs-theme"); } catch (e) {}
-        root.setAttribute("data-theme", saved || "dark");
+        var hour = new Date().getHours();
+        var prefersDark = false;
+        try { prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches; } catch (e) {}
+        root.setAttribute("data-theme", saved || (hour >= 17 || hour < 7 || prefersDark ? "dark" : "light"));
         /* Safety net: if the reveal script never signals ready (blocked or threw),
            force every block visible so a partial-JS failure can't blank the page. */
         setTimeout(function () {
@@ -666,8 +1135,102 @@
         html.is-loading, html.is-loading body { overflow: auto !important; }
       </style>
     </noscript>
+    <!-- Structured data mirrors the visible menu — inert while the page is
+         noindex, massive value the day a client removes it. Keep in sync. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "CafeOrCoffeeShop",
+        "name": "Cedar & Steam",
+        "description": "A small specialty coffee bar in Mar Mikhaël, Beirut — espresso, slow brew, milk & specialty drinks, cold pours, tea, and house-baked pastries.",
+        "servesCuisine": ["Coffee", "Tea", "Pastries"],
+        "priceRange": "$",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Rue d'Arménie, Mar Mikhaël",
+          "addressLocality": "Beirut",
+          "addressCountry": "LB"
+        },
+        "openingHours": "Mo-Su 07:30-19:00",
+        "hasMenu": {
+          "@type": "Menu",
+          "name": "Cedar & Steam — Menu",
+          "inLanguage": "en",
+          "hasMenuSection": [
+            {
+              "@type": "MenuSection",
+              "name": "The House Signature",
+              "hasMenuItem": [
+                { "@type": "MenuItem", "name": "Cardamom Cortado", "description": "A double ristretto cut with silky steamed milk and freshly cracked green cardamom. Served short, in a glass.", "offers": { "@type": "Offer", "price": "6.00", "priceCurrency": "USD" } }
+              ]
+            },
+            {
+              "@type": "MenuSection",
+              "name": "Espresso",
+              "hasMenuItem": [
+                { "@type": "MenuItem", "name": "Espresso", "description": "A double shot of our house blend — cocoa, toasted almond, a clean finish.", "offers": { "@type": "Offer", "price": "3.50", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Macchiato", "description": "Espresso marked with a spoonful of textured milk.", "offers": { "@type": "Offer", "price": "4.00", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Cortado", "description": "Equal parts espresso and warm milk, served short.", "offers": { "@type": "Offer", "price": "4.25", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Cappuccino", "description": "A balanced cup, dense foam, dusted with cocoa on request.", "offers": { "@type": "Offer", "price": "4.75", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Flat White", "description": "Ristretto base, velvet microfoam, no fuss.", "offers": { "@type": "Offer", "price": "5.00", "priceCurrency": "USD" } }
+              ]
+            },
+            {
+              "@type": "MenuSection",
+              "name": "Slow Brew",
+              "hasMenuItem": [
+                { "@type": "MenuItem", "name": "Batch Brew", "description": "Today's filter roast, brewed by the pot and poured all day.", "offers": { "@type": "Offer", "price": "3.75", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Pour-Over", "description": "This week's single origin, hand-brewed one cup at a time.", "offers": { "@type": "Offer", "price": "5.50", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Aeropress", "description": "A rounder, fuller cup — ask the barista what's on the bench.", "offers": { "@type": "Offer", "price": "5.25", "priceCurrency": "USD" } }
+              ]
+            },
+            {
+              "@type": "MenuSection",
+              "name": "Milk & Specialty",
+              "hasMenuItem": [
+                { "@type": "MenuItem", "name": "Café Latte", "description": "Long and mellow, the everyday cup.", "offers": { "@type": "Offer", "price": "5.00", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Cardamom Latte", "description": "Freshly ground cardamom folded through steamed milk and espresso.", "offers": { "@type": "Offer", "price": "5.75", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Mocha", "description": "Dark Lebanese chocolate, espresso, steamed milk.", "offers": { "@type": "Offer", "price": "5.50", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Spiced Chai Latte", "description": "House-brewed black tea with ginger, clove, and cinnamon.", "offers": { "@type": "Offer", "price": "5.25", "priceCurrency": "USD" } }
+              ]
+            },
+            {
+              "@type": "MenuSection",
+              "name": "Cold",
+              "hasMenuItem": [
+                { "@type": "MenuItem", "name": "Cold Brew", "description": "Steeped sixteen hours — low acidity, smooth, naturally sweet.", "suitableForDiet": "https://schema.org/VeganDiet", "offers": { "@type": "Offer", "price": "5.00", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Iced Latte", "description": "Double shot over cold milk and ice.", "offers": { "@type": "Offer", "price": "5.25", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Espresso Tonic", "description": "Tonic, ice, a wedge of orange, and a fresh shot on top.", "offers": { "@type": "Offer", "price": "5.75", "priceCurrency": "USD" } }
+              ]
+            },
+            {
+              "@type": "MenuSection",
+              "name": "Tea & Tisanes",
+              "hasMenuItem": [
+                { "@type": "MenuItem", "name": "Fresh Mint Tea", "description": "A fat bunch of mint, steeped whole. Honey on the side.", "offers": { "@type": "Offer", "price": "3.75", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Zhourat", "description": "The Lebanese mountain blend — chamomile, rose, and wild herbs.", "offers": { "@type": "Offer", "price": "4.00", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "White Coffee", "description": "Orange-blossom water served hot. No coffee, all calm.", "offers": { "@type": "Offer", "price": "3.25", "priceCurrency": "USD" } }
+              ]
+            },
+            {
+              "@type": "MenuSection",
+              "name": "Pastries",
+              "hasMenuItem": [
+                { "@type": "MenuItem", "name": "Butter Croissant", "description": "Laminated over three days, baked each morning.", "offers": { "@type": "Offer", "price": "4.25", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Pain au Chocolat", "description": "Two batons of dark chocolate in flaky pastry.", "offers": { "@type": "Offer", "price": "4.75", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Pistachio & Orange Cake", "description": "A moist slice with Aleppo pistachio and bright citrus syrup.", "offers": { "@type": "Offer", "price": "5.50", "priceCurrency": "USD" } },
+                { "@type": "MenuItem", "name": "Date & Tahini Cookie", "description": "Chewy, lightly salted, made with local dates.", "suitableForDiet": "https://schema.org/VeganDiet", "offers": { "@type": "Offer", "price": "3.50", "priceCurrency": "USD" } }
+              ]
+            }
+          ]
+        }
+      }
+    </script>
   </head>
   <body>
+    <a class="skip-link" href="#menu">Skip to the menu</a>
+    <div class="backdrop" aria-hidden="true"></div>
+    <span class="to-top-sentinel" aria-hidden="true"></span>
     <div class="preloader" id="preloader" role="status" aria-label="Loading the menu">
       <div class="preloader__inner">
         <svg class="preloader__cup" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -712,8 +1275,45 @@
         b.setAttribute("aria-label", dark ? "Switch to day theme" : "Switch to evening theme");
       })();
     </script>
+
+    <!-- Tasting ribbon: fixed section nav, revealed once the hero scrolls away -->
+    <nav class="ribbon" aria-label="Menu sections" hidden>
+      <div class="ribbon__track">
+        <a class="ribbon__link" href="#sec-signature">
+          <svg class="ribbon__glyph" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M8 1.5l1.7 4.8L14.5 8l-4.8 1.7L8 14.5 6.3 9.7 1.5 8l4.8-1.7z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
+          </svg>
+          <span>Signature</span>
+        </a>
+        <a class="ribbon__link" href="#sec-espresso"><img src="assets/menu/emblem-espresso.svg" alt="" width="16" height="16" loading="lazy" /><span>Espresso</span></a>
+        <a class="ribbon__link" href="#sec-brew"><img src="assets/menu/emblem-brew.svg" alt="" width="16" height="16" loading="lazy" /><span>Slow Brew</span></a>
+        <a class="ribbon__link" href="#sec-milk"><img src="assets/menu/emblem-milk.svg" alt="" width="16" height="16" loading="lazy" /><span>Milk</span></a>
+        <a class="ribbon__link" href="#sec-cold"><img src="assets/menu/emblem-cold.svg" alt="" width="16" height="16" loading="lazy" /><span>Cold</span></a>
+        <a class="ribbon__link" href="#sec-tea"><img src="assets/menu/emblem-tea.svg" alt="" width="16" height="16" loading="lazy" /><span>Tea</span></a>
+        <a class="ribbon__link" href="#sec-pastries"><img src="assets/menu/emblem-pastries.svg" alt="" width="16" height="16" loading="lazy" /><span>Pastries</span></a>
+        <span class="ribbon__ink" aria-hidden="true"></span>
+      </div>
+    </nav>
     <div class="page">
+      <span class="page-crease page-crease--1" aria-hidden="true"></span>
+      <span class="page-crease page-crease--2" aria-hidden="true"></span>
       <header class="hero" data-reveal>
+        <!-- Rubber stamp: double roundel, ring of type, one bean -->
+        <svg class="stamp" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="60" cy="60" r="57" stroke="currentColor" stroke-width="2.2" />
+          <circle cx="60" cy="60" r="51.5" stroke="currentColor" stroke-width="1" />
+          <defs>
+            <path id="stamp-arc" d="M60 60m-42 0a42 42 0 1 1 84 0a42 42 0 1 1 -84 0" />
+          </defs>
+          <text font-family="Inter, Arial, sans-serif" font-size="7.4" font-weight="700" letter-spacing="1.9" fill="currentColor">
+            <textPath href="#stamp-arc">CEDAR &amp; STEAM · MAR MIKHAËL · SINCE 2021 ·</textPath>
+          </text>
+          <g transform="rotate(-24 60 60)" stroke="currentColor" stroke-width="2">
+            <ellipse cx="60" cy="60" rx="13" ry="8.4" fill="rgba(92, 116, 88, 0.14)" />
+            <path d="M51.5 57.5q8.5 6 17 0" fill="none" />
+          </g>
+        </svg>
+
         <!-- Cover illustration: steaming cup + cedar sprig (Cedar & Steam) -->
         <svg class="hero__art" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A steaming cup of coffee with a cedar sprig">
           <!-- steam -->
@@ -756,7 +1356,11 @@
           roasted down the street, milk from the Beqaa, and pastries pulled
           warm from the oven.
         </p>
-        <p class="hero__meta">Open Daily · 7:30 – 19:00</p>
+        <!-- Live status when JS runs ("Open now · closes 19:00"); this static
+             line is the no-JS fallback. Hours live in data-open / data-close. -->
+        <p class="hero__meta" data-open="07:30" data-close="19:00">
+          Open Daily · <time datetime="07:30">7:30</time> – <time datetime="19:00">19:00</time>
+        </p>
 
         <svg class="ornament" viewBox="0 0 190 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <line x1="2" y1="6" x2="74" y2="6" stroke="currentColor" stroke-width="1.2" />
@@ -768,8 +1372,8 @@
         </svg>
       </header>
 
-      <main class="menu">
-        <section class="signature" aria-labelledby="sig-title" data-reveal>
+      <main class="menu" id="menu" tabindex="-1">
+        <section class="signature" id="sec-signature" aria-labelledby="sig-title" data-reveal>
           <figure class="signature__art">
             <img
               src="assets/menu/signature.svg"
@@ -781,7 +1385,7 @@
           </figure>
           <div class="signature__body">
             <p class="signature__eyebrow">The House Signature</p>
-            <h2 class="signature__title" id="sig-title">Cardamom Cortado</h2>
+            <h2 class="signature__title" id="sig-title">Cardamom Cortado <span class="tag" role="img" title="house favourite" aria-label="house favourite">★ house</span></h2>
             <p class="signature__desc">
               Our defining cup — a double ristretto cut with silky steamed milk and
               freshly cracked green cardamom. Warm, aromatic, a little unexpected.
@@ -791,10 +1395,10 @@
           </div>
         </section>
 
-        <section class="section" data-reveal aria-labelledby="sec-espresso">
+        <section class="section" id="sec-espresso" data-reveal aria-labelledby="sec-espresso-title">
           <div class="section__head">
             <img class="section__emblem" src="assets/menu/emblem-espresso.svg" alt="" width="42" height="42" loading="lazy" />
-            <h2 class="section__title" id="sec-espresso">Espresso</h2>
+            <h2 class="section__title" id="sec-espresso-title">Espresso</h2>
             <span class="section__rule" aria-hidden="true"></span>
             <span class="section__note">Pulled to order</span>
           </div>
@@ -842,10 +1446,10 @@
           </ul>
         </section>
 
-        <section class="section" data-reveal aria-labelledby="sec-brew">
+        <section class="section" id="sec-brew" data-reveal aria-labelledby="sec-brew-title">
           <div class="section__head">
             <img class="section__emblem" src="assets/menu/emblem-brew.svg" alt="" width="42" height="42" loading="lazy" />
-            <h2 class="section__title" id="sec-brew">Slow Brew</h2>
+            <h2 class="section__title" id="sec-brew-title">Slow Brew</h2>
             <span class="section__rule" aria-hidden="true"></span>
             <span class="section__note">Filter &amp; batch</span>
           </div>
@@ -864,7 +1468,15 @@
                 <span class="item__leader" aria-hidden="true"></span>
                 <span class="item__price">$5.50</span>
               </div>
-              <p class="item__desc">Single-origin Ethiopian, hand-brewed — bright with stone fruit and jasmine.</p>
+              <p class="item__desc">Hand-brewed, one cup at a time — this week's origin below.</p>
+              <!-- THIS WEEK'S POUR-OVER — the client's one edit point: swap this line weekly. -->
+              <p class="item__origin">
+                <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M10.5 1.5c-5 0-8.5 3-9 9 6 .5 9-4 9-9z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" fill="rgba(92, 116, 88, 0.15)" />
+                  <path d="M3.2 8.8C4.8 6.4 7 4.3 9.4 2.7" stroke="currentColor" stroke-width="1" stroke-linecap="round" />
+                </svg>
+                This week: Ethiopia · Guji · washed — stone fruit, jasmine
+              </p>
             </li>
             <li class="item">
               <div class="item__line">
@@ -877,10 +1489,10 @@
           </ul>
         </section>
 
-        <section class="section" data-reveal aria-labelledby="sec-milk">
+        <section class="section" id="sec-milk" data-reveal aria-labelledby="sec-milk-title">
           <div class="section__head">
             <img class="section__emblem" src="assets/menu/emblem-milk.svg" alt="" width="42" height="42" loading="lazy" />
-            <h2 class="section__title" id="sec-milk">Milk &amp; Specialty</h2>
+            <h2 class="section__title" id="sec-milk-title">Milk &amp; Specialty</h2>
             <span class="section__rule" aria-hidden="true"></span>
             <span class="section__note">Oat +$0.50</span>
           </div>
@@ -920,17 +1532,17 @@
           </ul>
         </section>
 
-        <section class="section" data-reveal aria-labelledby="sec-cold">
+        <section class="section" id="sec-cold" data-reveal aria-labelledby="sec-cold-title">
           <div class="section__head">
             <img class="section__emblem" src="assets/menu/emblem-cold.svg" alt="" width="42" height="42" loading="lazy" />
-            <h2 class="section__title" id="sec-cold">Cold</h2>
+            <h2 class="section__title" id="sec-cold-title">Cold</h2>
             <span class="section__rule" aria-hidden="true"></span>
             <span class="section__note">Over ice</span>
           </div>
           <ul class="items">
             <li class="item">
               <div class="item__line">
-                <span class="item__name">Cold Brew</span>
+                <span class="item__name">Cold Brew <span class="tag" role="img" title="vegan" aria-label="vegan">V</span></span>
                 <span class="item__leader" aria-hidden="true"></span>
                 <span class="item__price">$5.00</span>
               </div>
@@ -955,10 +1567,45 @@
           </ul>
         </section>
 
-        <section class="section" data-reveal aria-labelledby="sec-pastries">
+        <section class="section" id="sec-tea" data-reveal aria-labelledby="sec-tea-title">
+          <div class="section__head">
+            <img class="section__emblem" src="assets/menu/emblem-tea.svg" alt="" width="42" height="42" loading="lazy" decoding="async" />
+            <h2 class="section__title" id="sec-tea-title">Tea &amp; Tisanes</h2>
+            <span class="section__rule" aria-hidden="true"></span>
+            <span class="section__note">Steeped fresh</span>
+          </div>
+          <ul class="items">
+            <li class="item">
+              <div class="item__line">
+                <span class="item__name">Fresh Mint Tea</span>
+                <span class="item__leader" aria-hidden="true"></span>
+                <span class="item__price">$3.75</span>
+              </div>
+              <p class="item__desc">A fat bunch of mint, steeped whole. Honey on the side.</p>
+            </li>
+            <li class="item">
+              <div class="item__line">
+                <span class="item__name">Zhourat</span>
+                <span class="item__leader" aria-hidden="true"></span>
+                <span class="item__price">$4.00</span>
+              </div>
+              <p class="item__desc">The Lebanese mountain blend — chamomile, rose, and wild herbs.</p>
+            </li>
+            <li class="item">
+              <div class="item__line">
+                <span class="item__name">White Coffee</span>
+                <span class="item__leader" aria-hidden="true"></span>
+                <span class="item__price">$3.25</span>
+              </div>
+              <p class="item__desc">Orange-blossom water served hot. No coffee, all calm.</p>
+            </li>
+          </ul>
+        </section>
+
+        <section class="section" id="sec-pastries" data-reveal aria-labelledby="sec-pastries-title">
           <div class="section__head">
             <img class="section__emblem" src="assets/menu/emblem-pastries.svg" alt="" width="42" height="42" loading="lazy" />
-            <h2 class="section__title" id="sec-pastries">Pastries</h2>
+            <h2 class="section__title" id="sec-pastries-title">Pastries</h2>
             <span class="section__rule" aria-hidden="true"></span>
             <span class="section__note">Baked in-house</span>
           </div>
@@ -989,7 +1636,7 @@
             </li>
             <li class="item">
               <div class="item__line">
-                <span class="item__name">Date &amp; Tahini Cookie</span>
+                <span class="item__name">Date &amp; Tahini Cookie <span class="tag" role="img" title="vegan" aria-label="vegan">V</span></span>
                 <span class="item__leader" aria-hidden="true"></span>
                 <span class="item__price">$3.50</span>
               </div>
@@ -1012,20 +1659,50 @@
         <div class="footer__cols">
           <div class="footer__group">
             <p class="footer__label">Find Us</p>
-            <p class="footer__text">Rue d'Arménie, Mar Mikhaël<br />Beirut, Lebanon</p>
+            <p class="footer__text">
+              <a href="https://maps.google.com/?q=Cedar+%26+Steam+Mar+Mikhael+Beirut" target="_blank" rel="noopener">Rue d'Arménie, Mar Mikhaël<br />Beirut, Lebanon</a>
+            </p>
           </div>
           <div class="footer__group">
             <p class="footer__label">Hours</p>
-            <p class="footer__text">Monday – Sunday<br />7:30 – 19:00</p>
+            <p class="footer__text">
+              Monday – Sunday<br />
+              <time datetime="07:30">7:30</time> – <time datetime="19:00">19:00</time><br />
+              Wifi — ask the barista
+            </p>
           </div>
         </div>
 
         <p class="footer__note">
           Prices in USD and include service. Ask our team about today's single
-          origin and any allergens before you order.
+          origin and any allergens before you order.<br />
+          <span class="footer__legend">V vegan · GF gluten-free · ★ house favourite</span>
         </p>
+
+        <p class="footer__edition">Menu · Summer 2026 · v1.2</p>
+
+        <!-- Order-ahead slot — not every café wants it. To enable, uncomment and
+             set the number:
+        <p class="footer__text"><a href="https://wa.me/0000000000" rel="noopener">Order ahead on WhatsApp</a></p>
+        -->
+
+        <!-- Print-only slot (shows on paper only, via .footer__print-only):
+        <p class="footer__print-only footer__note">Take a photo of this menu — @cedarandsteam</p>
+        -->
       </footer>
+
+      <span class="page-fold" aria-hidden="true"></span>
     </div>
+
+    <button class="to-top" type="button" hidden aria-label="Back to top">
+      <!-- the loose bean from beans.svg, stood upright -->
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <g transform="rotate(-62 12 12)">
+          <ellipse cx="12" cy="12" rx="8" ry="5.2" stroke="currentColor" stroke-width="2" fill="rgba(168, 112, 62, 0.16)" />
+          <path d="M6.9 9.1q5.1 3.7 10.2 0" stroke="currentColor" stroke-width="1.8" />
+        </g>
+      </svg>
+    </button>
 
     <script>
       (function () {
@@ -1047,6 +1724,9 @@
           }
           var beat = new Promise(function (r) { setTimeout(r, reduce ? 300 : 900); });
           var fonts = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+          /* the tracked-out wordmark settles once the real fonts arrive */
+          var word = pre.querySelector(".preloader__word");
+          if (word) fonts.then(function () { word.classList.add("is-set"); });
           var loaded = (document.readyState === "complete")
             ? Promise.resolve()
             : new Promise(function (r) { window.addEventListener("load", r, { once: true }); });
@@ -1060,11 +1740,12 @@
           reveals.forEach(function (el) { el.classList.add("is-visible"); });
         } else {
           var io = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-              if (entry.isIntersecting) {
-                entry.target.classList.add("is-visible");
-                io.unobserve(entry.target);
-              }
+            /* stagger blocks that arrive in the same batch (same trick as index) */
+            var incoming = entries.filter(function (entry) { return entry.isIntersecting; });
+            incoming.forEach(function (entry, order) {
+              entry.target.style.setProperty("--reveal-delay", Math.min(order * 60, 240) + "ms");
+              entry.target.classList.add("is-visible");
+              io.unobserve(entry.target);
             });
           }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
           reveals.forEach(function (el) { io.observe(el); });
@@ -1086,12 +1767,134 @@
         if (btn) {
           btn.addEventListener("click", function () {
             var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-            root.setAttribute("data-theme", next);
-            try { localStorage.setItem("cs-theme", next); } catch (e) {}
-            sync();
+            var swap = function () {
+              root.setAttribute("data-theme", next);
+              try { localStorage.setItem("cs-theme", next); } catch (e) {}
+              sync();
+            };
+            /* day↔evening as a soft crossfade where the browser supports it */
+            if (document.startViewTransition && !reduce) document.startViewTransition(swap);
+            else swap();
           });
         }
+
+        /* ---- Open-now pill: rewrite the static hours line into live status.
+           No JS = the static markup stands. Hours come from data-open/close. */
+        (function () {
+          var line = document.querySelector(".hero__meta");
+          if (!line || !line.getAttribute("data-open")) return;
+          var toMins = function (t) { var p = t.split(":"); return p[0] * 60 + +p[1]; };
+          var opens = line.getAttribute("data-open");
+          var closes = line.getAttribute("data-close");
+          var now = new Date();
+          var isOpen = now.getHours() * 60 + now.getMinutes() >= toMins(opens)
+            && now.getHours() * 60 + now.getMinutes() < toMins(closes);
+          line.innerHTML =
+            '<span class="hero__meta-dot' + (isOpen ? " is-open" : "") + '" aria-hidden="true"></span>' +
+            (isOpen
+              ? 'Open now · closes <time datetime="' + closes + '">' + closes + "</time>"
+              : 'Opens at <time datetime="' + opens + '">' + opens.replace(/^0/, "") + "</time>");
+        })();
+
+        /* ---- Tasting ribbon: reveal past the hero, spy sections, slide the ink. */
+        (function () {
+          var ribbon = document.querySelector(".ribbon");
+          var hero = document.querySelector(".hero");
+          if (!ribbon || !hero || !("IntersectionObserver" in window)) return;
+          var track = ribbon.querySelector(".ribbon__track");
+          var ink = ribbon.querySelector(".ribbon__ink");
+          var links = {};
+          var active = null;
+          ribbon.querySelectorAll("a[href^='#']").forEach(function (a) {
+            links[a.getAttribute("href").slice(1)] = a;
+          });
+
+          /* the ink is one element: translate + scale it under the active chip */
+          function placeInk() {
+            if (!active || ribbon.hidden) return;
+            ink.style.transform =
+              "translateX(" + active.offsetLeft + "px) scaleX(" + active.offsetWidth / 60 + ")";
+            ribbon.classList.add("is-spied");
+          }
+          function setActive(link) {
+            if (link === active) return;
+            if (active) active.removeAttribute("aria-current");
+            active = link;
+            if (!link) return;
+            link.setAttribute("aria-current", "true");
+            placeInk();
+            /* keep the active chip in view on narrow screens (scroll the track
+               only — scrollIntoView could tug the page itself) */
+            if (track.scrollWidth > track.clientWidth) {
+              track.scrollTo({
+                left: link.offsetLeft - (track.clientWidth - link.offsetWidth) / 2,
+                behavior: reduce ? "auto" : "smooth"
+              });
+            }
+          }
+
+          /* sentinel: the ribbon exists only after the hero has scrolled away */
+          new IntersectionObserver(function (entries) {
+            var entry = entries[entries.length - 1];
+            var past = !entry.isIntersecting && entry.boundingClientRect.bottom < 0;
+            if (past !== ribbon.hidden) return;
+            ribbon.hidden = !past;
+            if (past) placeInk(); /* offsets are only measurable once visible */
+          }).observe(hero);
+
+          /* scroll-spy: a narrow band ~40% down the viewport picks the section */
+          var spy = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) setActive(links[entry.target.id]);
+            });
+          }, { rootMargin: "-40% 0px -55% 0px" });
+          Object.keys(links).forEach(function (id) {
+            var section = document.getElementById(id);
+            if (section) spy.observe(section);
+          });
+
+          window.addEventListener("resize", placeInk, { passive: true });
+        })();
+
+        /* ---- Back-to-top bean, after ~2 viewports (sentinel, no scroll listener). */
+        (function () {
+          var toTop = document.querySelector(".to-top");
+          var mark = document.querySelector(".to-top-sentinel");
+          if (!toTop || !mark || !("IntersectionObserver" in window)) return;
+          new IntersectionObserver(function (entries) {
+            var entry = entries[entries.length - 1];
+            toTop.hidden = !(!entry.isIntersecting && entry.boundingClientRect.top < 0);
+          }).observe(mark);
+          toTop.addEventListener("click", function () {
+            window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+          });
+        })();
       })();
     </script>
+
+    <!-- OPTIONAL — USD ⇄ LBP toggle (ships OFF; static USD is the no-JS truth).
+         Maintenance risk: the LBP rate drifts fast — enable only for a client who
+         commits to updating data-rate. To turn on: set data-rate on <body>
+         (e.g. <body data-rate="89500">), add data-usd="3.50" etc. to each
+         .item__price / .signature__price, add a <button data-currency-toggle>,
+         then uncomment this script:
+    <script>
+      (function () {
+        var rate = +document.body.getAttribute("data-rate");
+        var toggle = document.querySelector("[data-currency-toggle]");
+        if (!rate || !toggle) return;
+        var lbp = false;
+        toggle.addEventListener("click", function () {
+          lbp = !lbp;
+          document.querySelectorAll("[data-usd]").forEach(function (el) {
+            var usd = +el.getAttribute("data-usd");
+            el.textContent = lbp
+              ? Math.round(usd * rate).toLocaleString("en-US") + " LBP"
+              : "$" + usd.toFixed(2);
+          });
+        });
+      })();
+    </script>
+    -->
   </body>
 </html>

@@ -1,7 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 190" fill="none" role="img" aria-label="A cortado glass with rising steam and cardamom pods">
+  <!-- Styles embedded in the file so the steam animates even when the SVG is
+       loaded via <img> (external images can't be reached by page CSS). -->
+  <style>
+    @media (prefers-reduced-motion: no-preference) {
+      .steam path {
+        transform-box: fill-box;
+        transform-origin: bottom center;
+        animation: steamRise 3.8s ease-in-out infinite;
+      }
+      .steam path:nth-child(2) { animation-delay: 0.6s; }
+      @keyframes steamRise {
+        0%, 100% { opacity: 0.28; transform: translateY(3px) scaleY(0.97); }
+        50% { opacity: 0.9; transform: translateY(-3px) scaleY(1.03); }
+      }
+    }
+  </style>
   <g stroke-linecap="round" stroke-linejoin="round">
     <!-- steam -->
-    <g stroke="#a8703e" stroke-width="2.6" opacity="0.8">
+    <g class="steam" stroke="#a8703e" stroke-width="2.6" opacity="0.8">
       <path d="M98 54c-7-8-7-15 0-23 5-6 5-12 1-18"/>
       <path d="M118 52c-7-8-7-15 0-23 5-6 5-12 1-18"/>
     </g>
