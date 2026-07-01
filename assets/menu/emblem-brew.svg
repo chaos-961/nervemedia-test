@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Pour-over dripper">
+  <g stroke="#a8703e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="32" cy="16" rx="14" ry="3.6" fill="rgba(168,112,62,0.13)"/>
+    <path d="M18.4 17 30 34h4l11.6-17" fill="rgba(168,112,62,0.13)"/>
+    <path d="M32 34v5"/>
+    <circle cx="32" cy="44" r="1.6" fill="#a8703e" stroke="none"/>
+    <path d="M23 47h18l-1.6 8.5A4 4 0 0 1 35.5 59h-7A4 4 0 0 1 24.6 55.5z" fill="rgba(168,112,62,0.13)"/>
+  </g>
+</svg>

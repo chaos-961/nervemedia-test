@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Milk pitcher">
+  <g stroke="#a8703e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M23 22h13a3 3 0 0 1 3 3v13a10 10 0 0 1-10 10h-2a10 10 0 0 1-10-10V25a3 3 0 0 1 3-3z" fill="rgba(168,112,62,0.13)"/>
+    <path d="M39 25l7-4-1.5 8z" fill="rgba(168,112,62,0.13)"/>
+    <path d="M20 27c-5 .4-8 4-8 8.5S15 44 19.5 44"/>
+    <path d="M45.5 24c1.7 1.5 1.7 3.4 0 4.9" stroke="#5c7458"/>
+    <path d="M48.5 22c2.7 2.4 2.7 6 0 8.4" stroke="#5c7458"/>
+  </g>
+</svg>

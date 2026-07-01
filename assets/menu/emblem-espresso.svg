@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Espresso portafilter">
+  <g stroke="#a8703e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="24" cy="23" rx="15" ry="4.5" fill="rgba(168,112,62,0.13)"/>
+    <path d="M9 23C10.5 33 15 38 24 38S37.5 33 39 23" fill="rgba(168,112,62,0.13)"/>
+    <path d="M20 37l1 6h3l1-6M27 37l1 6h3l1-6" fill="rgba(168,112,62,0.13)"/>
+    <path d="M22 46v3.6M30 46v3.6" opacity="0.85"/>
+    <path d="M39 25h13a4.5 4.5 0 0 1 0 9h-9"/>
+  </g>
+</svg>

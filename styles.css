@@ -2762,7 +2762,6 @@ body.is-light .site-nav a {
 
 .launch-tile {
   position: relative;
-  pointer-events: none;
   display: flex;
   align-items: center;
   gap: clamp(12px, 1.4vw, 18px);
@@ -2780,6 +2779,11 @@ body.is-light .site-nav a {
     border-color 240ms ease,
     background 240ms ease,
     box-shadow 240ms ease;
+}
+
+/* Only tiles flagged aria-disabled stay non-interactive; live tiles are clickable. */
+.launch-tile[aria-disabled="true"] {
+  pointer-events: none;
 }
 
 .launch-index {

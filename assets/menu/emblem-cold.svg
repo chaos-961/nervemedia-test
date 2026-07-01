@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Iced drink">
+  <g stroke="#a8703e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 17h20l-2.6 34A3 3 0 0 1 36.4 54H27.6A3 3 0 0 1 24.6 51z" fill="rgba(168,112,62,0.13)"/>
+    <path d="M22.7 26h18.6"/>
+    <rect x="26" y="31" width="7" height="7" rx="1.4"/>
+    <rect x="33.5" y="39" width="6.5" height="6.5" rx="1.4"/>
+    <path d="M39 12 30 50" opacity="0.9"/>
+  </g>
+</svg>

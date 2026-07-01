@@ -4,74 +4,174 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#140d08" />
     <meta name="description" content="Menu for Cedar &amp; Steam, a specialty coffee bar in Beirut — espresso, slow brew, milk &amp; specialty drinks, cold pours, tea, and house-baked pastries." />
     <title>Cedar &amp; Steam — Menu</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <style>
       :root {
         color-scheme: light;
-        --ink: #1a1a1a;
-        --ink-soft: #4a4a4a;
-        --muted: #6b6b6b;
-        --line: rgba(26, 26, 26, 0.16);
-        --leader: rgba(26, 26, 26, 0.28);
-        --accent: #7a4b2b;
-        --paper: #ffffff;
+
+        /* --- Warm editorial palette --- */
+        --paper: #f7f1e7;        /* cream sheet */
+        --paper-band: #f1e8d8;   /* faint tint band */
+        --card: #fbf6ec;         /* raised elements */
+        --ink: #241c15;          /* espresso ink */
+        --ink-soft: #574838;     /* soft brown body text */
+        --muted: #77664f;        /* labels / meta (AA on paper + band) */
+        --line: rgba(36, 28, 21, 0.16);
+        --line-soft: rgba(36, 28, 21, 0.10);
+        --leader: rgba(36, 28, 21, 0.30);
+        --brass: #a8703e;        /* primary accent */
+        --brass-deep: #855327;
+        --cedar: #5c7458;        /* secondary accent (cedar green) */
+        --shadow: 0 34px 70px -44px rgba(72, 46, 20, 0.60);
+
         --serif: "Fraunces", Georgia, "Times New Roman", serif;
         --sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+
+        --measure: 760px;
       }
 
-      * {
-        box-sizing: border-box;
+      /* --- Evening (dark) theme --- */
+      [data-theme="dark"] {
+        color-scheme: dark;
+        --paper: #241a13;
+        --paper-band: #2d221a;
+        --card: #2d221a;
+        --ink: #f4ebdd;
+        --ink-soft: #cebfad;
+        --muted: #9d8b76;
+        --line: rgba(244, 235, 221, 0.16);
+        --line-soft: rgba(244, 235, 221, 0.08);
+        --leader: rgba(244, 235, 221, 0.26);
+        --brass: #d99f63;
+        --brass-deep: #e6b077;
+        --cedar: #8ba883;
+        --shadow: 0 40px 84px -44px rgba(0, 0, 0, 0.78);
+      }
+      [data-theme="dark"] body {
+        background-color: #140d08;
+        background-image:
+          radial-gradient(88% 58% at 50% -10%, rgba(184, 124, 70, 0.16), rgba(184, 124, 70, 0) 55%),
+          radial-gradient(70% 48% at 50% 40%, rgba(150, 100, 56, 0.10), rgba(150, 100, 56, 0) 62%),
+          radial-gradient(120% 100% at 50% 122%, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 55%),
+          linear-gradient(180deg, #1c130c 0%, #140d08 58%, #0f0a06 100%);
+      }
+      [data-theme="dark"] body::before { mix-blend-mode: screen; opacity: 0.05; }
+      [data-theme="dark"] .page {
+        background-image:
+          radial-gradient(140% 60% at 50% -8%, rgba(255, 248, 236, 0.05), rgba(255, 248, 236, 0) 60%);
+      }
+      /* Candle-lit signature feature in the Evening theme: a lifted surface,
+         a stronger top-left glow, and a warmer border above the flat card. */
+      [data-theme="dark"] .signature {
+        background:
+          radial-gradient(130% 130% at 14% -12%, rgba(230, 176, 119, 0.16), rgba(230, 176, 119, 0) 60%),
+          #372b21;
+        border-color: rgba(230, 176, 119, 0.42);
+        box-shadow: 0 26px 52px -34px rgba(0, 0, 0, 0.82);
       }
 
-      html {
-        -webkit-text-size-adjust: 100%;
-      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 
       body {
         margin: 0;
-        background: var(--paper);
         color: var(--ink);
         font-family: var(--sans);
         font-size: 16px;
         line-height: 1.6;
         -webkit-font-smoothing: antialiased;
         text-rendering: optimizeLegibility;
+        /* warm textured "tabletop" behind the menu card */
+        background-color: #e7d9c0;
+        background-image:
+          radial-gradient(85% 55% at 50% -8%, rgba(255, 251, 242, 0.75), rgba(255, 251, 242, 0) 55%),
+          radial-gradient(130% 100% at 50% 118%, rgba(120, 88, 48, 0.18), rgba(120, 88, 48, 0) 55%),
+          radial-gradient(120% 90% at 50% -12%, #f1e7d4 0%, #e7d9c0 58%, #d8c6a6 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+        padding: clamp(0px, 3vw, 48px) clamp(0px, 3vw, 40px);
       }
 
+      /* Fine paper grain over everything */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.05;
+        mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='140'%20height='140'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.85'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3C/filter%3E%3Crect%20width='100%25'%20height='100%25'%20filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      /* ---------- The menu sheet ---------- */
       .page {
-        max-width: 720px;
+        position: relative;
+        z-index: 1;
+        max-width: var(--measure);
         margin: 0 auto;
-        padding: clamp(28px, 6vw, 72px) clamp(20px, 6vw, 56px) clamp(40px, 7vw, 88px);
+        background: var(--paper);
+        background-image:
+          radial-gradient(140% 60% at 50% -8%, rgba(255, 252, 245, 0.9), rgba(255, 252, 245, 0) 60%);
+        border-radius: 3px;
+        box-shadow: var(--shadow);
+        padding: clamp(30px, 6vw, 78px) clamp(22px, 6vw, 64px) clamp(44px, 7vw, 92px);
       }
 
-      /* ---------- Hero ---------- */
+      /* printed inner keyline frame */
+      .page::before {
+        content: "";
+        position: absolute;
+        inset: clamp(9px, 1.6vw, 16px);
+        border: 1px solid rgba(168, 112, 62, 0.30);
+        border-radius: 2px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .page > * { position: relative; z-index: 1; }
+
+      /* faint roasted-bean accents in the sheet corners */
+      .page::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.10;
+        background-image: url("assets/menu/beans.svg"), url("assets/menu/beans.svg");
+        background-repeat: no-repeat, no-repeat;
+        background-position: right 8px top 34px, left 2px bottom 54px;
+        background-size: 92px, 66px;
+      }
+
+      /* ---------- Hero (the cover) ---------- */
       .hero {
         text-align: center;
-        padding-bottom: clamp(28px, 5vw, 48px);
-        border-bottom: 1px solid var(--line);
+        padding: clamp(6px, 2vw, 16px) 0 clamp(30px, 5vw, 52px);
       }
 
-      .hero__mark {
+      .hero__art {
         display: block;
-        width: clamp(48px, 12vw, 68px);
+        width: clamp(112px, 26vw, 168px);
         height: auto;
-        margin: 0 auto clamp(16px, 3vw, 24px);
-        color: var(--accent);
+        margin: 0 auto clamp(14px, 2.5vw, 22px);
+        color: var(--brass);
       }
 
       .hero__kicker {
-        margin: 0 0 clamp(12px, 2vw, 18px);
-        color: var(--muted);
+        margin: 0 0 clamp(14px, 2.4vw, 20px);
+        color: var(--brass-deep);
         font-size: 0.72rem;
         font-weight: 600;
-        letter-spacing: 0.28em;
+        letter-spacing: 0.3em;
         text-transform: uppercase;
       }
 
@@ -79,69 +179,110 @@
         margin: 0;
         font-family: var(--serif);
         font-optical-sizing: auto;
-        font-size: clamp(2.4rem, 9vw, 4.25rem);
+        font-size: clamp(2.7rem, 11vw, 5rem);
         font-weight: 500;
-        line-height: 1.02;
-        letter-spacing: -0.01em;
+        line-height: 0.98;
+        letter-spacing: -0.015em;
+      }
+      .hero__title .amp {
+        font-style: italic;
+        font-weight: 400;
+        color: var(--brass);
+        padding: 0 0.06em;
       }
 
       .hero__tagline {
-        margin: clamp(14px, 2.5vw, 20px) auto 0;
-        max-width: 38ch;
+        margin: clamp(16px, 2.6vw, 22px) auto 0;
+        max-width: 40ch;
         color: var(--ink-soft);
-        font-size: clamp(0.95rem, 2.4vw, 1.05rem);
-        line-height: 1.55;
+        font-family: var(--serif);
+        font-style: italic;
+        font-weight: 400;
+        font-size: clamp(1rem, 2.6vw, 1.2rem);
+        line-height: 1.5;
       }
 
       .hero__meta {
-        margin: clamp(18px, 3vw, 26px) 0 0;
+        margin: clamp(20px, 3.2vw, 30px) 0 0;
         color: var(--muted);
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         font-weight: 600;
-        letter-spacing: 0.2em;
+        letter-spacing: 0.24em;
         text-transform: uppercase;
       }
 
-      /* ---------- Sections ---------- */
-      .menu {
-        margin: 0;
+      /* Ornamental divider */
+      .ornament {
+        display: block;
+        width: clamp(140px, 34vw, 190px);
+        height: 12px;
+        margin: clamp(26px, 4vw, 40px) auto 0;
+        color: var(--brass);
+        opacity: 0.9;
       }
 
-      .section {
-        margin-top: clamp(36px, 6vw, 56px);
-      }
+      /* ---------- Sections ---------- */
+      .menu { margin: 0; }
+
+      .section { margin-top: clamp(40px, 6vw, 62px); }
 
       .section__head {
         display: flex;
-        align-items: baseline;
-        gap: 14px;
-        margin: 0 0 clamp(18px, 3vw, 26px);
+        align-items: center;
+        gap: 13px;
+        margin: 0 0 clamp(20px, 3vw, 28px);
+      }
+
+      .section__emblem {
+        flex: 0 0 auto;
+        width: clamp(46px, 9vw, 60px);
+        aspect-ratio: 1 / 1;
+        height: auto;
+        padding: 7px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 50% 44%, rgba(168, 112, 62, 0.17), rgba(168, 112, 62, 0.05) 60%, rgba(168, 112, 62, 0) 72%);
+        box-shadow: inset 0 0 0 1px rgba(168, 112, 62, 0.22);
+        margin-inline-start: -2px;
+      }
+
+      /* External <img> SVGs can't inherit currentColor — brighten the fixed
+         brass so illustrations match the lighter accent in the Evening theme. */
+      [data-theme="dark"] .section__emblem,
+      [data-theme="dark"] .signature__art img { filter: brightness(1.42) saturate(0.92); }
+      [data-theme="dark"] .page::after { filter: brightness(1.4); }
+
+      /* Narrow screens: long titles + notes can't share a line — drop the
+         note to its own right-aligned line so nothing overflows. */
+      @media (max-width: 460px) {
+        .section__head { flex-wrap: wrap; row-gap: 4px; }
+        /* higher specificity so it beats the base .section__note { flex: 0 0 auto } */
+        .section__head .section__note { flex: 0 0 100%; text-align: right; }
       }
 
       .section__title {
         margin: 0;
         flex: 0 0 auto;
         font-family: var(--serif);
-        font-size: clamp(1.35rem, 4vw, 1.75rem);
+        font-size: clamp(1.45rem, 4.4vw, 1.95rem);
         font-weight: 600;
         letter-spacing: -0.005em;
       }
 
       .section__rule {
         flex: 1 1 auto;
+        align-self: center;
         height: 1px;
-        background: var(--line);
-        transform: translateY(-0.18em);
+        background: linear-gradient(90deg, var(--line), var(--line-soft));
       }
 
       .section__note {
         flex: 0 0 auto;
-        color: var(--muted);
-        font-size: 0.68rem;
-        font-weight: 600;
+        color: var(--brass-deep);
+        font-size: 0.66rem;
+        font-weight: 700;
         letter-spacing: 0.18em;
         text-transform: uppercase;
-        transform: translateY(-0.05em);
+        align-self: center;
       }
 
       /* ---------- Item rows with dot leaders ---------- */
@@ -150,8 +291,10 @@
         padding: 0;
         list-style: none;
         display: grid;
-        gap: clamp(16px, 2.6vw, 22px);
+        gap: clamp(18px, 2.8vw, 24px);
       }
+
+      .item { padding: 2px 0; }
 
       .item__line {
         display: flex;
@@ -161,10 +304,12 @@
 
       .item__name {
         font-family: var(--serif);
-        font-size: 1.05rem;
+        font-size: 1.1rem;
         font-weight: 500;
         color: var(--ink);
+        transition: color 0.25s ease;
       }
+      .item:hover .item__name { color: var(--brass-deep); }
 
       .item__leader {
         flex: 1 1 auto;
@@ -177,47 +322,126 @@
 
       .item__price {
         flex: 0 0 auto;
+        font-family: var(--serif);
         font-variant-numeric: tabular-nums;
         font-feature-settings: "tnum";
-        font-size: 1rem;
+        font-size: 1.02rem;
         font-weight: 600;
-        color: var(--ink);
+        color: var(--brass-deep);
       }
 
       .item__desc {
-        margin: 4px 0 0;
-        max-width: 52ch;
+        margin: 5px 0 0;
+        max-width: 54ch;
         color: var(--ink-soft);
-        font-size: 0.9rem;
-        line-height: 1.5;
+        font-size: 0.92rem;
+        line-height: 1.55;
+      }
+
+      /* two-column spread on wider screens (>=720px keeps columns wide enough
+         that the longest item names stay on one line and leaders hug prices) */
+      @media (min-width: 720px) {
+        .items--split {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          column-gap: clamp(30px, 4vw, 52px);
+          row-gap: clamp(18px, 2.4vw, 24px);
+        }
+      }
+
+      /* ---------- Signature feature ---------- */
+      .signature {
+        margin-top: clamp(30px, 5vw, 46px);
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: clamp(6px, 3vw, 24px);
+        align-items: center;
+        text-align: center;
+        padding: clamp(24px, 4vw, 38px);
+        background:
+          radial-gradient(120% 120% at 15% 0%, rgba(168, 112, 62, 0.08), rgba(168, 112, 62, 0) 60%),
+          var(--paper-band);
+        border: 1px solid rgba(168, 112, 62, 0.28);
+        border-radius: 5px;
+      }
+
+      .signature__art {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+      }
+      .signature__art img {
+        width: clamp(148px, 42vw, 196px);
+        height: auto;
+      }
+
+      .signature__eyebrow {
+        margin: 0 0 8px;
+        color: var(--brass-deep);
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+      }
+
+      .signature__title {
+        margin: 0;
+        font-family: var(--serif);
+        font-size: clamp(1.7rem, 5vw, 2.35rem);
+        font-weight: 600;
+        line-height: 1.05;
+        letter-spacing: -0.01em;
+      }
+
+      .signature__desc {
+        margin: clamp(10px, 2vw, 14px) auto 0;
+        max-width: 46ch;
+        color: var(--ink-soft);
+        font-size: 0.96rem;
+        line-height: 1.55;
+      }
+
+      .signature__price {
+        margin: clamp(12px, 2vw, 16px) 0 0;
+        font-family: var(--serif);
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum";
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--brass-deep);
+      }
+
+      @media (min-width: 620px) {
+        .signature {
+          grid-template-columns: minmax(0, 196px) 1fr;
+          gap: clamp(22px, 4vw, 44px);
+          text-align: left;
+          padding: clamp(28px, 4vw, 40px);
+        }
+        .signature__desc { margin-inline: 0; }
       }
 
       /* ---------- Footer ---------- */
       .footer {
-        margin-top: clamp(44px, 7vw, 72px);
-        padding-top: clamp(24px, 4vw, 36px);
+        margin-top: clamp(48px, 7vw, 76px);
+        padding-top: clamp(26px, 4vw, 38px);
         border-top: 1px solid var(--line);
         text-align: center;
       }
 
-      .footer__divider {
-        display: block;
-        width: 120px;
-        height: 10px;
-        margin: 0 auto clamp(18px, 3vw, 26px);
-        color: var(--accent);
-      }
-
-      .footer__group {
-        margin: 0 0 16px;
+      .footer__cols {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: clamp(20px, 6vw, 64px);
+        margin: 0 0 clamp(22px, 4vw, 30px);
       }
 
       .footer__label {
-        margin: 0 0 4px;
-        color: var(--muted);
-        font-size: 0.66rem;
+        margin: 0 0 6px;
+        color: var(--brass-deep);
+        font-size: 0.64rem;
         font-weight: 700;
-        letter-spacing: 0.2em;
+        letter-spacing: 0.22em;
         text-transform: uppercase;
       }
 
@@ -229,85 +453,352 @@
       }
 
       .footer__note {
-        margin: clamp(22px, 4vw, 32px) 0 0;
+        margin: clamp(20px, 4vw, 30px) auto 0;
+        max-width: 52ch;
         color: var(--muted);
         font-size: 0.8rem;
-        line-height: 1.5;
+        line-height: 1.55;
       }
 
       a {
-        color: var(--accent);
+        color: var(--brass-deep);
         text-decoration-thickness: 1px;
         text-underline-offset: 3px;
       }
-
       a:focus-visible {
         outline: 2px solid var(--ink);
         outline-offset: 3px;
         border-radius: 2px;
       }
 
+      /* ---------- Evening / Day toggle ---------- */
+      .theme-toggle {
+        position: fixed;
+        top: clamp(12px, 3vw, 22px);
+        right: clamp(12px, 3vw, 22px);
+        z-index: 20;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid rgba(168, 112, 62, 0.42);
+        background: var(--card);
+        color: var(--brass-deep);
+        cursor: pointer;
+        box-shadow: 0 10px 26px -14px rgba(60, 40, 20, 0.65);
+        transition: transform 0.2s ease, background 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+      }
+      .theme-toggle:hover { transform: translateY(-1px) rotate(-8deg); }
+      .theme-toggle:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+      .theme-toggle svg { width: 22px; height: 22px; display: block; }
+      .theme-toggle .icon-sun { display: none; }
+      [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+      [data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+
+      /* ---------- Scroll reveal (progressive enhancement) ---------- */
+      .js [data-reveal] {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.7s ease, transform 0.75s cubic-bezier(0.2, 0.7, 0.2, 1);
+        will-change: opacity, transform;
+      }
+      .js [data-reveal].is-visible {
+        opacity: 1;
+        transform: none;
+      }
+
+      /* ---------- Rising steam on the hero cup ---------- */
+      .hero__steam path {
+        transform-box: fill-box;
+        transform-origin: bottom center;
+        animation: steamRise 3.8s ease-in-out infinite;
+      }
+      .hero__steam path:nth-child(2) { animation-delay: 0.6s; }
+      .hero__steam path:nth-child(3) { animation-delay: 1.2s; }
+      @keyframes steamRise {
+        0%, 100% { opacity: 0.28; transform: translateY(3px) scaleY(0.97); }
+        50% { opacity: 0.9; transform: translateY(-3px) scaleY(1.03); }
+      }
+
+      /* ---------- Preloader (brew screen) ---------- */
+      html.is-loading, html.is-loading body { overflow: hidden; }
+
+      .preloader {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(120% 85% at 50% 32%, rgba(184, 124, 70, 0.12), rgba(184, 124, 70, 0) 60%),
+          var(--paper);
+        transition: opacity 0.6s ease, visibility 0.6s ease;
+      }
+      .preloader.is-done { opacity: 0; visibility: hidden; }
+
+      .preloader__inner {
+        display: grid;
+        justify-items: center;
+        gap: clamp(16px, 3vw, 24px);
+        padding: 24px;
+      }
+
+      .preloader__cup { width: clamp(96px, 26vw, 132px); height: auto; color: var(--brass); }
+      .preloader__word {
+        margin: 0;
+        font-family: var(--serif);
+        font-size: clamp(1.5rem, 5.5vw, 2.1rem);
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+      }
+      .preloader__word .amp { font-style: italic; font-weight: 400; color: var(--brass); padding: 0 0.05em; }
+
+      .preloader__bar {
+        position: relative;
+        width: clamp(130px, 44vw, 200px);
+        height: 2px;
+        background: var(--line);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .preloader__bar i {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -40%;
+        width: 40%;
+        background: linear-gradient(90deg, transparent, var(--brass), transparent);
+        animation: loadSlide 1.15s ease-in-out infinite;
+      }
+      @keyframes loadSlide { to { left: 100%; } }
+
+      .preloader__fill {
+        transform-box: fill-box;
+        transform-origin: bottom;
+        animation: cupFill 1.8s ease-in-out infinite alternate;
+      }
+      @keyframes cupFill {
+        0% { transform: scaleY(0.12); opacity: 0.45; }
+        100% { transform: scaleY(1); opacity: 1; }
+      }
+      .preloader__steam path {
+        transform-box: fill-box;
+        transform-origin: bottom center;
+        animation: steamRise 3s ease-in-out infinite;
+      }
+      .preloader__steam path:nth-child(2) { animation-delay: 0.5s; }
+      .preloader__steam path:nth-child(3) { animation-delay: 1s; }
+
       @media (prefers-reduced-motion: reduce) {
-        * {
-          transition: none !important;
-          animation: none !important;
+        html { scroll-behavior: auto; }
+        * { transition: none !important; animation: none !important; }
+        .js [data-reveal] { opacity: 1 !important; transform: none !important; }
+        .theme-toggle:hover { transform: none; }
+        .preloader__fill { transform: none; opacity: 1; }
+      }
+
+      /* ---------- Print: elegant ink-on-paper ---------- */
+      @media print {
+        :root,
+        [data-theme="dark"] {
+          --paper: #ffffff;
+          --paper-band: #f4efe6;
+          --card: #ffffff;
+          --ink: #1a1a1a;
+          --ink-soft: #333333;
+          --muted: #666666;
+          --line: rgba(0, 0, 0, 0.22);
+          --line-soft: rgba(0, 0, 0, 0.1);
+          --leader: rgba(0, 0, 0, 0.35);
+          --brass: #7a4b2b;
+          --brass-deep: #6a3f22;
+          --cedar: #4f6b4a;
+          --shadow: none;
         }
+        body { background: #fff !important; padding: 0; }
+        body::before { display: none; }
+        .page {
+          max-width: none;
+          border-radius: 0;
+          box-shadow: none;
+          padding: 16px 20px;
+        }
+        .page::before { inset: 6px; }
+        .page::after { display: none; }
+        .theme-toggle, .preloader { display: none !important; }
+        .js [data-reveal] { opacity: 1 !important; transform: none !important; }
+        .hero__steam path { animation: none; opacity: 0.7; }
+        .hero, .signature, .section, .item, .footer { break-inside: avoid; }
       }
     </style>
+    <script>
+      /* Apply theme before paint (defaults to the dark "Evening" theme) + flag
+         JS for progressive reveal + lock scroll while the preloader is up. */
+      (function () {
+        var root = document.documentElement;
+        root.classList.add("js", "is-loading");
+        var saved = null;
+        try { saved = localStorage.getItem("cs-theme"); } catch (e) {}
+        root.setAttribute("data-theme", saved || "dark");
+        /* Safety net: if the reveal script never signals ready (blocked or threw),
+           force every block visible so a partial-JS failure can't blank the page. */
+        setTimeout(function () {
+          if (!window.__revealReady) {
+            var els = document.querySelectorAll("[data-reveal]");
+            for (var i = 0; i < els.length; i++) els[i].classList.add("is-visible");
+          }
+        }, 1600);
+        /* Deep failsafe: never let the preloader trap the page. */
+        setTimeout(function () {
+          root.classList.remove("is-loading");
+          var p = document.getElementById("preloader");
+          if (p) p.classList.add("is-done");
+        }, 6000);
+      })();
+    </script>
+    <noscript>
+      <style>
+        .preloader { display: none !important; }
+        html.is-loading, html.is-loading body { overflow: auto !important; }
+      </style>
+    </noscript>
   </head>
   <body>
-    <div class="page">
-      <header class="hero">
-        <svg
-          class="hero__mark"
-          viewBox="0 0 64 64"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-        >
-          <path
-            d="M14 27h31a8 8 0 0 1 0 16h-3"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-          />
-          <path
-            d="M14 27v9a14 14 0 0 0 14 14h2a14 14 0 0 0 14-14v-9z"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linejoin="round"
-          />
-          <path
-            d="M45 31a4.5 4.5 0 0 1 0 8"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-          />
-          <path
-            d="M23 9c-2.4 2.6-2.4 5.2 0 7.8M31 9c-2.4 2.6-2.4 5.2 0 7.8M39 9c-2.4 2.6-2.4 5.2 0 7.8"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-          />
+    <div class="preloader" id="preloader" role="status" aria-label="Loading the menu">
+      <div class="preloader__inner">
+        <svg class="preloader__cup" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <clipPath id="cupClip">
+              <path d="M40 52h40l-3 22a12 12 0 0 1-12 10h-10a12 12 0 0 1-12-10z" />
+            </clipPath>
+          </defs>
+          <g class="preloader__steam" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.8">
+            <path d="M52 40c-5-5-5-10 0-15 4-4 4-8 1-12" />
+            <path d="M62 38c-5-5-5-10 0-15 4-4 4-8 1-12" />
+            <path d="M72 40c-5-5-5-10 0-15 4-4 4-8 1-12" />
+          </g>
+          <g clip-path="url(#cupClip)">
+            <rect class="preloader__fill" x="38" y="52" width="44" height="34" fill="rgba(168,112,62,0.55)" />
+          </g>
+          <path d="M40 52h40l-3 22a12 12 0 0 1-12 10h-10a12 12 0 0 1-12-10z" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round" />
+          <ellipse cx="60" cy="52" rx="20" ry="5" stroke="currentColor" stroke-width="3.5" />
+          <path d="M80 58c9-2 13 3 11 9-2 5-7 6-11 5.5" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" />
+          <ellipse cx="60" cy="92" rx="30" ry="5" stroke="currentColor" stroke-width="3" opacity="0.65" />
         </svg>
+        <p class="preloader__word">Cedar <span class="amp">&amp;</span> Steam</p>
+        <span class="preloader__bar" aria-hidden="true"><i></i></span>
+      </div>
+    </div>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to day theme" aria-pressed="true">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 14.5A8 8 0 0 1 9.5 4a7 7 0 1 0 10.5 10.5z" />
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+      </svg>
+    </button>
+    <script>
+      /* Correct the toggle's accessible state from first paint (before deferred sync). */
+      (function () {
+        var b = document.currentScript.previousElementSibling;
+        var dark = document.documentElement.getAttribute("data-theme") === "dark";
+        b.setAttribute("aria-pressed", String(dark));
+        b.setAttribute("aria-label", dark ? "Switch to day theme" : "Switch to evening theme");
+      })();
+    </script>
+    <div class="page">
+      <header class="hero" data-reveal>
+        <!-- Cover illustration: steaming cup + cedar sprig (Cedar & Steam) -->
+        <svg class="hero__art" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A steaming cup of coffee with a cedar sprig">
+          <!-- steam -->
+          <g class="hero__steam" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.85">
+            <path d="M84 66c-7-7-7-14 0-21 6-6 6-12 1-18" />
+            <path d="M100 62c-7-7-7-14 0-21 6-6 6-12 1-18" />
+            <path d="M116 66c-7-7-7-14 0-21 6-6 6-12 1-18" />
+          </g>
+          <!-- saucer shadow -->
+          <ellipse cx="100" cy="169" rx="58" ry="7" fill="rgba(60,40,20,0.06)" />
+          <!-- saucer -->
+          <ellipse cx="100" cy="160" rx="64" ry="13" stroke="currentColor" stroke-width="3.5" />
+          <ellipse cx="100" cy="157" rx="42" ry="7" stroke="currentColor" stroke-width="2" opacity="0.5" />
+          <!-- cup body -->
+          <path d="M63 96h74l-5 34a20 20 0 0 1-19.8 17H87.8A20 20 0 0 1 68 130z" fill="rgba(168,112,62,0.10)" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round" />
+          <!-- coffee surface + crema -->
+          <ellipse cx="100" cy="96" rx="33" ry="7.4" fill="rgba(168,112,62,0.30)" />
+          <path d="M75 94q25 6.5 50 0" stroke="currentColor" stroke-width="1.6" opacity="0.5" />
+          <!-- rim -->
+          <ellipse cx="100" cy="96" rx="37" ry="9" stroke="currentColor" stroke-width="3.5" />
+          <!-- handle -->
+          <path d="M137 104c18-4 26 6 22 18-3 9-13 12-22 11" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" />
+          <!-- cedar sprig resting on the saucer -->
+          <g stroke="var(--cedar)" stroke-width="2.4" stroke-linecap="round">
+            <path d="M150 150c9-3 17-9 22-18" />
+            <path d="M156 146c-1-4 0-8 3-11M162 143c-1-4 0-8 3-11M168 139c-1-4 1-8 4-10M150 149c-4-1-8 0-11 3M156 145c-4-2-8-1-11 1" />
+          </g>
+          <!-- loose beans -->
+          <g stroke="currentColor" stroke-width="2" fill="rgba(168,112,62,0.16)">
+            <ellipse cx="40" cy="155" rx="8" ry="5" transform="rotate(-22 40 155)" />
+            <path d="M34 153q6 4 12 0" fill="none" opacity="0.7" />
+            <ellipse cx="53" cy="166" rx="7" ry="4.4" transform="rotate(-22 53 166)" />
+          </g>
+        </svg>
+
         <p class="hero__kicker">Est. 2021 · Mar Mikhaël, Beirut</p>
-        <h1 class="hero__title">Cedar &amp; Steam</h1>
+        <h1 class="hero__title">Cedar <span class="amp">&amp;</span> Steam</h1>
         <p class="hero__tagline">
           A small coffee bar built around slow mornings — single-origin beans
           roasted down the street, milk from the Beqaa, and pastries pulled
           warm from the oven.
         </p>
         <p class="hero__meta">Open Daily · 7:30 – 19:00</p>
+
+        <svg class="ornament" viewBox="0 0 190 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <line x1="2" y1="6" x2="74" y2="6" stroke="currentColor" stroke-width="1.2" />
+          <path d="M84 6h6M95 2l6 4-6 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="95" cy="6" r="3.2" stroke="currentColor" stroke-width="1.2" />
+          <circle cx="95" cy="6" r="1" fill="currentColor" />
+          <path d="M100 6h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          <line x1="116" y1="6" x2="188" y2="6" stroke="currentColor" stroke-width="1.2" />
+        </svg>
       </header>
 
       <main class="menu">
-        <section class="section" aria-labelledby="sec-espresso">
+        <section class="signature" aria-labelledby="sig-title" data-reveal>
+          <figure class="signature__art">
+            <img
+              src="assets/menu/signature.svg"
+              alt="A cortado glass with rising steam and green cardamom pods"
+              width="220"
+              height="190"
+              loading="lazy"
+            />
+          </figure>
+          <div class="signature__body">
+            <p class="signature__eyebrow">The House Signature</p>
+            <h2 class="signature__title" id="sig-title">Cardamom Cortado</h2>
+            <p class="signature__desc">
+              Our defining cup — a double ristretto cut with silky steamed milk and
+              freshly cracked green cardamom. Warm, aromatic, a little unexpected.
+              Served short, in a glass.
+            </p>
+            <p class="signature__price">$6.00</p>
+          </div>
+        </section>
+
+        <section class="section" data-reveal aria-labelledby="sec-espresso">
           <div class="section__head">
+            <img class="section__emblem" src="assets/menu/emblem-espresso.svg" alt="" width="42" height="42" loading="lazy" />
             <h2 class="section__title" id="sec-espresso">Espresso</h2>
             <span class="section__rule" aria-hidden="true"></span>
             <span class="section__note">Pulled to order</span>
           </div>
-          <ul class="items">
+          <ul class="items items--split">
             <li class="item">
               <div class="item__line">
                 <span class="item__name">Espresso</span>
@@ -351,8 +842,9 @@
           </ul>
         </section>
 
-        <section class="section" aria-labelledby="sec-brew">
+        <section class="section" data-reveal aria-labelledby="sec-brew">
           <div class="section__head">
+            <img class="section__emblem" src="assets/menu/emblem-brew.svg" alt="" width="42" height="42" loading="lazy" />
             <h2 class="section__title" id="sec-brew">Slow Brew</h2>
             <span class="section__rule" aria-hidden="true"></span>
             <span class="section__note">Filter &amp; batch</span>
@@ -385,13 +877,14 @@
           </ul>
         </section>
 
-        <section class="section" aria-labelledby="sec-milk">
+        <section class="section" data-reveal aria-labelledby="sec-milk">
           <div class="section__head">
+            <img class="section__emblem" src="assets/menu/emblem-milk.svg" alt="" width="42" height="42" loading="lazy" />
             <h2 class="section__title" id="sec-milk">Milk &amp; Specialty</h2>
             <span class="section__rule" aria-hidden="true"></span>
             <span class="section__note">Oat +$0.50</span>
           </div>
-          <ul class="items">
+          <ul class="items items--split">
             <li class="item">
               <div class="item__line">
                 <span class="item__name">Café Latte</span>
@@ -427,8 +920,9 @@
           </ul>
         </section>
 
-        <section class="section" aria-labelledby="sec-cold">
+        <section class="section" data-reveal aria-labelledby="sec-cold">
           <div class="section__head">
+            <img class="section__emblem" src="assets/menu/emblem-cold.svg" alt="" width="42" height="42" loading="lazy" />
             <h2 class="section__title" id="sec-cold">Cold</h2>
             <span class="section__rule" aria-hidden="true"></span>
             <span class="section__note">Over ice</span>
@@ -461,13 +955,14 @@
           </ul>
         </section>
 
-        <section class="section" aria-labelledby="sec-pastries">
+        <section class="section" data-reveal aria-labelledby="sec-pastries">
           <div class="section__head">
+            <img class="section__emblem" src="assets/menu/emblem-pastries.svg" alt="" width="42" height="42" loading="lazy" />
             <h2 class="section__title" id="sec-pastries">Pastries</h2>
             <span class="section__rule" aria-hidden="true"></span>
             <span class="section__note">Baked in-house</span>
           </div>
-          <ul class="items">
+          <ul class="items items--split">
             <li class="item">
               <div class="item__line">
                 <span class="item__name">Butter Croissant</span>
@@ -504,28 +999,25 @@
         </section>
       </main>
 
-      <footer class="footer">
-        <svg
-          class="footer__divider"
-          viewBox="0 0 120 10"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-        >
-          <line x1="0" y1="5" x2="46" y2="5" stroke="currentColor" stroke-width="1" />
-          <circle cx="60" cy="5" r="3" stroke="currentColor" stroke-width="1" />
-          <circle cx="60" cy="5" r="1" fill="currentColor" />
-          <line x1="74" y1="5" x2="120" y2="5" stroke="currentColor" stroke-width="1" />
+      <footer class="footer" data-reveal>
+        <svg class="ornament" viewBox="0 0 190 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <line x1="20" y1="6" x2="80" y2="6" stroke="currentColor" stroke-width="1.2" />
+          <g transform="rotate(-18 95 6)">
+            <ellipse cx="95" cy="6" rx="6.6" ry="3.7" stroke="currentColor" stroke-width="1.2" />
+            <path d="M89.5 6q5.5 2.6 11 0" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" />
+          </g>
+          <line x1="110" y1="6" x2="170" y2="6" stroke="currentColor" stroke-width="1.2" />
         </svg>
 
-        <div class="footer__group">
-          <p class="footer__label">Find Us</p>
-          <p class="footer__text">Rue d'Arménie, Mar Mikhaël<br />Beirut, Lebanon</p>
-        </div>
-
-        <div class="footer__group">
-          <p class="footer__label">Hours</p>
-          <p class="footer__text">Monday – Sunday · 7:30 – 19:00</p>
+        <div class="footer__cols">
+          <div class="footer__group">
+            <p class="footer__label">Find Us</p>
+            <p class="footer__text">Rue d'Arménie, Mar Mikhaël<br />Beirut, Lebanon</p>
+          </div>
+          <div class="footer__group">
+            <p class="footer__label">Hours</p>
+            <p class="footer__text">Monday – Sunday<br />7:30 – 19:00</p>
+          </div>
         </div>
 
         <p class="footer__note">
@@ -534,5 +1026,72 @@
         </p>
       </footer>
     </div>
+
+    <script>
+      (function () {
+        var root = document.documentElement;
+        var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        /* ---- Preloader: hold the brew screen until fonts, images, and a short
+           beat have passed, then fade in the menu. Failsafe guarantees dismissal. */
+        (function () {
+          var pre = document.getElementById("preloader");
+          if (!pre) { root.classList.remove("is-loading"); return; }
+          var done = false;
+          function finish() {
+            if (done) return;
+            done = true;
+            pre.classList.add("is-done");
+            root.classList.remove("is-loading");
+            setTimeout(function () { if (pre.parentNode) pre.parentNode.removeChild(pre); }, 700);
+          }
+          var beat = new Promise(function (r) { setTimeout(r, reduce ? 300 : 900); });
+          var fonts = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+          var loaded = (document.readyState === "complete")
+            ? Promise.resolve()
+            : new Promise(function (r) { window.addEventListener("load", r, { once: true }); });
+          Promise.all([beat, fonts, loaded]).then(finish);
+          setTimeout(finish, 5000);
+        })();
+
+        /* ---- Scroll reveal — fall back to fully visible if unsupported/reduced. */
+        var reveals = document.querySelectorAll("[data-reveal]");
+        if (reduce || !("IntersectionObserver" in window)) {
+          reveals.forEach(function (el) { el.classList.add("is-visible"); });
+        } else {
+          var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                io.unobserve(entry.target);
+              }
+            });
+          }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+          reveals.forEach(function (el) { io.observe(el); });
+        }
+        window.__revealReady = true;
+
+        /* ---- Day / Evening theme toggle (+ browser chrome color). */
+        var meta = document.querySelector('meta[name="theme-color"]');
+        var btn = document.querySelector("[data-theme-toggle]");
+        function sync() {
+          var dark = root.getAttribute("data-theme") === "dark";
+          if (btn) {
+            btn.setAttribute("aria-pressed", String(dark));
+            btn.setAttribute("aria-label", dark ? "Switch to day theme" : "Switch to evening theme");
+          }
+          if (meta) meta.setAttribute("content", dark ? "#140d08" : "#f1e7d4");
+        }
+        sync();
+        if (btn) {
+          btn.addEventListener("click", function () {
+            var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            root.setAttribute("data-theme", next);
+            try { localStorage.setItem("cs-theme", next); } catch (e) {}
+            sync();
+          });
+        }
+      })();
+    </script>
   </body>
 </html>
