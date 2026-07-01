@@ -47,9 +47,10 @@
 
   #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
+  /* the laptop is always visible now; the veil never covers it */
   .veil {
     position: absolute; inset: 0; background: var(--backdrop);
-    pointer-events: none; z-index: 2; opacity: 1;
+    pointer-events: none; z-index: 2; opacity: 0;
   }
 
   .poster {
@@ -215,7 +216,15 @@
   function cable(from, to, sag) {
     const mid = from.clone().add(to).multiplyScalar(0.5); mid.y -= sag;
     const curve = new THREE.CatmullRomCurve3([from, mid, to]);
-    return new THREE.Mesh(new THREE.TubeGeometry(curve, 44, 0.014, 6, false), M.cable);
+    const c = new THREE.Mesh(new THREE.TubeGeometry(curve, 50, 0.017, 8, false), M.cable);
+    c.castShadow = true;
+    return c;
+  }
+  // small connector plug where a cable meets the laptop
+  function plug(at) {
+    const p = new THREE.Mesh(new RoundedBoxGeometry(0.055, 0.03, 0.05, 2, 0.01), M.dark);
+    p.position.copy(at);
+    return p;
   }
 
   /* ---------- keyboard: recessed tray + instanced keycaps + printed legends ---------- */
@@ -303,8 +312,13 @@
     g.position.set(W * 0.74, FLOOR_Y, 0.34);
     g.rotation.y = -0.14;
     group.add(g);
-    group.add(cable(new THREE.Vector3(W * 0.74 - 0.02, FLOOR_Y + 0.05, 0.0),
-                    new THREE.Vector3(W / 2 + 0.04, -DECK_T * 0.5, 0.14), 0.14));
+    // cable: mouse front → right USB port, with a strain-relief nub at the mouse + a plug at the laptop
+    const mExit = new THREE.Vector3(W * 0.72, FLOOR_Y + 0.05, 0.02);
+    const mPort = new THREE.Vector3(W / 2 - 0.01, -DECK_T * 0.5, 0.14);
+    const nub = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.055, 8), M.dark);
+    nub.rotation.z = Math.PI / 2; nub.position.copy(mExit); group.add(nub);
+    group.add(cable(mExit, mPort, 0.06));
+    group.add(plug(mPort));
   }
 
   /* ---------- headphones (left of the laptop) ---------- */
@@ -322,9 +336,15 @@
     }
     g.position.set(-W * 0.72, FLOOR_Y + 0.19, 0.28);
     g.rotation.y = 0.5;
+    // cord tail hanging from the near (right) ear cup down to the floor
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.2, 8), M.cable);
+    tail.position.set(0.24, -0.14, 0.06); g.add(tail);
     group.add(g);
-    group.add(cable(new THREE.Vector3(-W * 0.72 + 0.16, FLOOR_Y + 0.04, 0.34),
-                    new THREE.Vector3(-W / 2 - 0.04, -DECK_T * 0.5, 0.12), 0.16));
+    // cable: near ear cup → left headphone jack, with a plug at the laptop
+    const hExit = new THREE.Vector3(-W * 0.64, FLOOR_Y + 0.03, 0.2);
+    const hJack = new THREE.Vector3(-W / 2 + 0.01, -DECK_T * 0.5, 0.12);
+    group.add(cable(hExit, hJack, 0.05));
+    group.add(plug(hJack));
   }
 
   /* ---------- build ---------- */
@@ -476,20 +496,17 @@
 
   /* ---------- pose from scroll progress ---------- */
   function applyPose(p) {
-    const enter = easeOutCubic(seg(p, 0.0, 0.18));
-    const open = easeInOutCubic(seg(p, 0.18, 0.52));
-    const close = easeInOutCubic(seg(p, 0.68, 1.0));
-    const lidOpen = p < 0.52 ? open : p < 0.68 ? 1 : 1 - close;
-    let reveal = easeOutCubic(clamp01((lidOpen - 0.62) / (1 - 0.62)));
-    if (p > 0.68) reveal *= 1 - easeInOutCubic(seg(p, 0.72, 0.92));
+    // The laptop is ALWAYS present (closed at the top of the scroll); scrolling only
+    // opens it, holds it, and closes it again — it never fades/pops in or out.
+    const open = easeInOutCubic(seg(p, 0.06, 0.5));
+    const close = easeInOutCubic(seg(p, 0.7, 1.0));
+    const lidOpen = p < 0.5 ? open : p < 0.7 ? 1 : 1 - close;
+    let reveal = easeOutCubic(clamp01((lidOpen - 0.45) / (1 - 0.45)));
+    if (p > 0.7) reveal *= 1 - easeInOutCubic(seg(p, 0.74, 0.94));
 
-    pose.appearScale = lerp(0.9, 1.0, enter);
-    pose.riseY = -(1 - enter) * 0.14;
-    pose.appear = enter;
     pose.lidOpen = lidOpen;
     pose.dolly = lidOpen;
     pose.reveal = reveal;
-    pose.veil = Math.max(1 - enter, easeInOutCubic(seg(p, 0.95, 1.0)));
 
     window.__laptop.progress = p;
     window.__laptop.lidOpen = lidOpen;
@@ -508,8 +525,8 @@
     const idleY = Math.sin(t * 0.9) * 0.015 * P.lidOpen;
     const idleRot = Math.sin(t * 0.6) * 0.012 * P.lidOpen;
 
-    laptopGroup.scale.setScalar(P.appearScale);
-    laptopGroup.position.set(0, P.riseY, 0);
+    laptopGroup.scale.setScalar(1);
+    laptopGroup.position.set(0, 0, 0);
     laptopGroup.rotation.y = lerp(YAW_CLOSED, YAW_OPEN, P.lidOpen) + ptr.x * 0.09 + idleRot;
     laptopGroup.rotation.x = ptr.y * -0.045;
     laptopGroup.rotation.z = idleRot * 0.35;
@@ -521,17 +538,15 @@
     camera.lookAt(target);
 
     if (textureReady) {
-      const breathe = 1 + 0.05 * Math.sin(t * 1.4);
+      const breathe = 1 + 0.04 * Math.sin(t * 1.4);
       screenMat.opacity = P.reveal;
-      screenMat.emissiveIntensity = P.reveal * 0.62 * breathe;
+      screenMat.emissiveIntensity = P.reveal * 0.9 * breathe;   // Nerve Media, clearly lit
     }
-    panelMat.emissiveIntensity = 0.04 + P.reveal * 0.05;
-    bloom.strength = P.reveal * 0.22;
-    groundMat.opacity = 0.36 * P.appear * (0.5 + 0.5 * P.lidOpen);
+    panelMat.emissiveIntensity = 0.05 + P.reveal * 0.06;
+    bloom.strength = P.reveal * 0.2;
+    groundMat.opacity = 0.36 * (0.45 + 0.55 * P.lidOpen);        // grounded even when closed
     rimLight.intensity = 1.0 + 0.5 * P.lidOpen;
     keyLight.intensity = 2.0 + 0.3 * P.lidOpen;
-
-    veil.style.opacity = P.veil.toFixed(3);
 
     camera.layers.set(BLOOM_LAYER);
     bloomComposer.render();
