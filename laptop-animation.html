@@ -8,17 +8,22 @@
 <title>Nerve Media — Laptop</title>
 <style>
   /* ===========================================================
-     A real WebGL (Three.js) aluminium laptop on pure white.
+     A real WebGL (Three.js) aluminium laptop in a soft studio.
      It APPEARS closed, OPENS on scroll and reveals the Nerve
-     Media wordmark glowing on the screen, HOLDS, then CLOSES.
-     Scroll drives a single progress value p in [0,1]; the same
-     appear / open / hold / close choreography as before, now in
-     3D. No build step: Three.js loads via a CDN import map.
-     Falls back to a static poster when WebGL / motion is off.
+     Media wordmark glowing gently on the screen, HOLDS, then
+     CLOSES. A continuous loop adds an idle float, a yaw-sweep as
+     it opens, and mouse parallax. No build step: Three.js loads
+     via a CDN import map. Falls back to a static poster when
+     WebGL / motion is off.
      =========================================================== */
-  :root { color-scheme: light; }
+  :root {
+    color-scheme: light;
+    /* soft studio backdrop — a gentle spotlight, not flat white */
+    --backdrop: radial-gradient(125% 95% at 50% 14%,
+      #ffffff 0%, #f4f6f9 38%, #e9edf2 72%, #e0e4ea 100%);
+  }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: #fff; color: #111; }
+  html, body { margin: 0; padding: 0; background: #e7eaef; color: #111; }
   body {
     font-family: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -30,18 +35,18 @@
     border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
   }
 
-  .track { position: relative; height: 360vh; background: #fff; }
+  .track { position: relative; height: 360vh; background: #e7eaef; }
   .stage {
     position: sticky; top: 0; height: 100vh; height: 100svh;
-    overflow: hidden; background: #fff;
+    overflow: hidden; background: var(--backdrop);
   }
 
   /* WebGL canvas fills the sticky stage */
   #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
-  /* white veil for a clean fade-in at the start and fade-out at the very end */
+  /* veil matches the backdrop for a seamless fade-in / fade-out */
   .veil {
-    position: absolute; inset: 0; background: #fff;
+    position: absolute; inset: 0; background: var(--backdrop);
     pointer-events: none; z-index: 2; opacity: 1;
   }
 
@@ -134,7 +139,6 @@
     window.__laptopSupport = { webgl: webglOK(), reduce: reduce };
     window.__laptopReady = false;
     if (!window.__laptopSupport.webgl) html.classList.add("is-fallback");
-    // If the module never boots (e.g. CDN blocked), reveal the poster.
     window.__bootTimer = setTimeout(function () {
       if (!window.__laptopReady) html.classList.add("is-fallback");
     }, 4500);
@@ -169,7 +173,7 @@
 
   window.__laptop = { progress: 0, lidOpen: 0, reveal: 0 };
 
-  /* ---------- math helpers (same voice as the previous build) ---------- */
+  /* ---------- math helpers ---------- */
   const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
   const seg = (p, a, b) => clamp01((p - a) / (b - a));
   const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -182,10 +186,10 @@
   const DECK_T = 0.09;      // deck thickness
   const LID_H = 1.9;        // lid (screen) height
   const LID_T = 0.06;       // lid thickness
-  const SCREEN_W = W * 0.9;
-  const SCREEN_H = LID_H * 0.86;
+  const SCREEN_W = W * 0.855;
+  const SCREEN_H = LID_H * 0.78;
   const LID_CLOSED = 1.53;  // rad — lid folded flat over the keys
-  const LID_OPEN = -0.20;   // rad — lid upright, reclined slightly back (~101deg from deck)
+  const LID_OPEN = -0.20;   // rad — lid upright, reclined slightly back
 
   /* ---------- scene state ---------- */
   let renderer, scene, camera, bloomComposer, bloom, glowScene, glowCam;
@@ -194,12 +198,51 @@
   let fitDist = 9;
   const camDir = new THREE.Vector3(0.0, 0.26, 1).normalize();
   const target = new THREE.Vector3(0, 0.4, 0);
+  const YAW_CLOSED = -0.5, YAW_OPEN = -0.26;              // turns toward the viewer as it opens
+  const clock = new THREE.Clock();
+  const ptr = { x: 0, y: 0 }, ptrTarget = { x: 0, y: 0 };  // damped mouse parallax
   let ready = false, visible = true, textureReady = false, disposed = false;
+  let running = false, scrollP = 0;
 
   const pose = {
     appearScale: 0.9, riseY: -0.14, appear: 0,
     lidOpen: 0, dolly: 0, reveal: 0, veil: 1
   };
+
+  /* ---------- procedural keyboard (recessed tray + individual keys) ---------- */
+  function buildKeyboard(group) {
+    const x0 = -W * 0.4, x1 = W * 0.4, z0 = -D * 0.3, z1 = D * 0.14;
+    const cols = 14, rows = 5;
+    const cellW = (x1 - x0) / cols, cellD = (z1 - z0) / rows;
+    const gap = 0.16;
+    const keyW = cellW * (1 - gap), keyD = cellD * (1 - gap), keyH = 0.026;
+
+    const tray = new THREE.Mesh(
+      new RoundedBoxGeometry((x1 - x0) + cellW * 0.6, 0.02, (z1 - z0) + cellD * 2.0, 3, 0.03),
+      new THREE.MeshStandardMaterial({ color: 0x0c0e12, metalness: 0.4, roughness: 0.62, envMapIntensity: 0.25 }));
+    tray.position.set((x0 + x1) / 2, -0.006, (z0 + z1) / 2 + cellD * 0.5);
+    tray.receiveShadow = true;
+    group.add(tray);
+
+    const keyMat = new THREE.MeshStandardMaterial({ color: 0x1b1e24, metalness: 0.35, roughness: 0.52, envMapIntensity: 0.3 });
+    const keyGeo = new RoundedBoxGeometry(keyW, keyH, keyD, 2, Math.min(keyW, keyD) * 0.16);
+    const keys = new THREE.InstancedMesh(keyGeo, keyMat, cols * rows);
+    const m = new THREE.Matrix4();
+    let i = 0;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        m.makeTranslation(x0 + cellW * (c + 0.5), keyH / 2 + 0.004, z0 + cellD * (r + 0.5));
+        keys.setMatrixAt(i++, m);
+      }
+    }
+    keys.instanceMatrix.needsUpdate = true;
+    group.add(keys);
+
+    // spacebar row in front of the grid
+    const space = new THREE.Mesh(new RoundedBoxGeometry(keyW * 5.4, keyH, keyD, 2, keyD * 0.16), keyMat);
+    space.position.set((x0 + x1) / 2, keyH / 2 + 0.004, z1 + cellD * 0.85);
+    group.add(space);
+  }
 
   /* ---------- build ---------- */
   function buildScene() {
@@ -208,7 +251,7 @@
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2));
-    renderer.setClearColor(0xffffff, 0);              // transparent → white stage shows through
+    renderer.setClearColor(0xffffff, 0);              // transparent → studio backdrop shows through
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -226,11 +269,9 @@
     pmrem.dispose();
 
     laptopGroup = new THREE.Group();
-    laptopGroup.rotation.y = -0.32;                   // gentle 3/4 turn
     scene.add(laptopGroup);
 
     const alu = new THREE.MeshStandardMaterial({ color: 0xd9dbdf, metalness: 0.92, roughness: 0.46, envMapIntensity: 0.85 });
-    const aluDark = new THREE.MeshStandardMaterial({ color: 0x111318, metalness: 0.6, roughness: 0.35, envMapIntensity: 0.7 });
 
     // deck — top surface at y=0, rear edge at z=-D/2
     const deck = new THREE.Mesh(new RoundedBoxGeometry(W, DECK_T, D, 5, 0.05), alu);
@@ -238,12 +279,15 @@
     deck.castShadow = true; deck.receiveShadow = true;
     laptopGroup.add(deck);
 
-    // keyboard well + trackpad (subtle darker insets)
-    const well = new THREE.Mesh(new RoundedBoxGeometry(W * 0.82, 0.012, D * 0.52, 4, 0.02), aluDark);
-    well.position.set(0, 0.002, -D * 0.06);
-    laptopGroup.add(well);
-    const pad = new THREE.Mesh(new RoundedBoxGeometry(W * 0.3, 0.012, D * 0.24, 4, 0.02), aluDark);
-    pad.position.set(0, 0.003, D * 0.28);
+    // keyboard + trackpad
+    buildKeyboard(laptopGroup);
+    const padFrame = new THREE.Mesh(new RoundedBoxGeometry(W * 0.335, 0.008, D * 0.275, 3, 0.03),
+      new THREE.MeshStandardMaterial({ color: 0x9096a0, metalness: 0.5, roughness: 0.5, envMapIntensity: 0.4 }));
+    padFrame.position.set(0, 0.0015, D * 0.32);
+    laptopGroup.add(padFrame);
+    const pad = new THREE.Mesh(new RoundedBoxGeometry(W * 0.32, 0.012, D * 0.26, 3, 0.03),
+      new THREE.MeshStandardMaterial({ color: 0xcfd2d6, metalness: 0.45, roughness: 0.4, envMapIntensity: 0.7 }));
+    pad.position.set(0, 0.003, D * 0.32);
     laptopGroup.add(pad);
 
     // hinge pivot at the shared rear edge
@@ -258,25 +302,39 @@
     lid.castShadow = true; lid.receiveShadow = true;
     lidPivot.add(lid);
 
-    // dark glass panel on the lid front (+z), always present
-    panelMat = new THREE.MeshStandardMaterial({ color: 0x05060a, metalness: 0.0, roughness: 0.58, envMapIntensity: 0.25, emissive: 0x0a0d13, emissiveIntensity: 0.05 });
+    const scy = LID_H / 2;   // screen centre on the lid
+
+    // black bezel framing the screen
+    const bezel = new THREE.Mesh(new THREE.PlaneGeometry(W * 0.9, LID_H * 0.88),
+      new THREE.MeshStandardMaterial({ color: 0x0a0b0d, metalness: 0.2, roughness: 0.5, envMapIntensity: 0.2 }));
+    bezel.position.set(0, scy, LID_T / 2 + 0.001);
+    lid.add(bezel);
+
+    // camera notch
+    const notch = new THREE.Mesh(new THREE.CircleGeometry(0.014, 20),
+      new THREE.MeshStandardMaterial({ color: 0x05060a, metalness: 0.4, roughness: 0.3, envMapIntensity: 0.3 }));
+    notch.position.set(0, scy + SCREEN_H / 2 + 0.05, LID_T / 2 + 0.003);
+    lid.add(notch);
+
+    // dark glass panel — the "off" screen
+    panelMat = new THREE.MeshStandardMaterial({ color: 0x04050a, metalness: 0.0, roughness: 0.55, envMapIntensity: 0.16, emissive: 0x0a0d14, emissiveIntensity: 0.04 });
     const panel = new THREE.Mesh(new THREE.PlaneGeometry(SCREEN_W, SCREEN_H), panelMat);
-    panel.position.set(0, LID_H / 2, LID_T / 2 + 0.002);
+    panel.position.set(0, scy, LID_T / 2 + 0.002);
     lid.add(panel);
 
-    // the wordmark plane — glows in on reveal (texture set once loaded)
-    const side = Math.min(SCREEN_W * 0.82, SCREEN_H * 0.94);
+    // the wordmark — glows in on reveal (texture set once loaded)
+    const side = Math.min(SCREEN_W * 0.62, SCREEN_H * 0.82);
     screenMat = new THREE.MeshStandardMaterial({
       color: 0x000000, emissive: 0xffffff, emissiveIntensity: 0,
       metalness: 0, roughness: 0.5, transparent: true, opacity: 0, depthWrite: false
     });
     const wordmark = new THREE.Mesh(new THREE.PlaneGeometry(side, side), screenMat);
-    wordmark.position.set(0, LID_H / 2, LID_T / 2 + 0.004);
+    wordmark.position.set(0, scy, LID_T / 2 + 0.004);
     wordmark.layers.enable(BLOOM_LAYER);   // only this glows in the bloom pass
     lid.add(wordmark);
 
     // lighting
-    keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+    keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
     keyLight.position.set(2.6, 6.0, 3.4);
     keyLight.castShadow = true;
     keyLight.shadow.mapSize.set(1024, 1024);
@@ -290,7 +348,7 @@
     fill.position.set(-4, 2, 2.5);
     scene.add(fill);
 
-    rimLight = new THREE.DirectionalLight(0xffffff, 1.4);
+    rimLight = new THREE.DirectionalLight(0xffffff, 1.2);
     rimLight.position.set(-1.5, 3.2, -5);
     scene.add(rimLight);
 
@@ -305,9 +363,9 @@
     scene.add(ground);
 
     // SELECTIVE bloom: render ONLY the wordmark (layer 1) on black to a bloom target,
-    // then add that glow over the transparent base scene. The aluminium body and the
-    // pure-white page are never touched by bloom.
-    bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.0 /*strength*/, 0.4 /*radius*/, 0.0 /*threshold*/);
+    // then add that glow (RGB only) over the transparent base scene, so the aluminium
+    // body and the studio backdrop are never touched by bloom.
+    bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.0 /*strength*/, 0.35 /*radius*/, 0.0 /*threshold*/);
     const bloomRP = new RenderPass(scene, camera);
     bloomRP.clearColor = new THREE.Color(0x000000);
     bloomRP.clearAlpha = 1;
@@ -316,12 +374,8 @@
     bloomComposer.addPass(bloomRP);
     bloomComposer.addPass(bloom);
 
-    // fullscreen additive quad that overlays the isolated glow onto the canvas
     glowScene = new THREE.Scene();
     glowCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    // add ONLY the glow's RGB; never touch the destination alpha, so empty pixels stay
-    // transparent and the pure-white page shows through (plain AdditiveBlending would
-    // force alpha=1 → opaque black background).
     const glowMat = new THREE.MeshBasicMaterial({
       map: bloomComposer.renderTarget2.texture,
       transparent: true, depthTest: false, depthWrite: false,
@@ -338,7 +392,8 @@
 
   /* ---------- camera fit (aspect-aware → good on desktop AND mobile) ---------- */
   function computeFit() {
-    lidPivot.rotation.x = LID_OPEN;      // measure at the widest (open) pose
+    laptopGroup.rotation.set(0, YAW_OPEN, 0);   // measure at the open pose (widest)
+    lidPivot.rotation.x = LID_OPEN;
     laptopGroup.scale.setScalar(1);
     laptopGroup.position.set(0, 0, 0);
     laptopGroup.updateMatrixWorld(true);
@@ -349,65 +404,17 @@
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
     const distV = sphere.radius / Math.sin(vFov / 2);
     const distH = sphere.radius / Math.sin(hFov / 2);
-    const margin = camera.aspect < 1 ? 1.16 : 1.08;   // extra breathing room in portrait
+    const margin = camera.aspect < 1 ? 1.18 : 1.1;   // extra breathing room in portrait
     fitDist = Math.max(distV, distH) * margin;
   }
 
-  /* ---------- per-frame pose application ---------- */
-  function renderFrame() {
-    if (!ready || disposed) return;
-    laptopGroup.scale.setScalar(pose.appearScale);
-    laptopGroup.position.set(0, pose.riseY, 0);
-    lidPivot.rotation.x = LID_CLOSED + (LID_OPEN - LID_CLOSED) * pose.lidOpen;
-
-    const d = fitDist * (1 - 0.1 * pose.dolly);
-    camera.position.copy(camDir).multiplyScalar(d).add(target);
-    camera.lookAt(target);
-
-    if (textureReady) {
-      screenMat.opacity = pose.reveal;
-      screenMat.emissiveIntensity = pose.reveal * 1.05;
-    }
-    panelMat.emissiveIntensity = 0.05 + pose.reveal * 0.08;
-    bloom.strength = pose.reveal * 0.5;
-    groundMat.opacity = 0.34 * pose.appear * (0.55 + 0.45 * pose.lidOpen);
-
-    // subtle lighting choreography as it opens
-    rimLight.intensity = 1.1 + 0.5 * pose.lidOpen;
-    keyLight.intensity = 2.2 + 0.3 * pose.lidOpen;
-
-    veil.style.opacity = pose.veil.toFixed(3);
-
-    // pass 1: isolated wordmark glow → bloom target (black bg)
-    camera.layers.set(BLOOM_LAYER);
-    bloomComposer.render();
-    // pass 2: full scene straight to the transparent canvas → pure-white page shows through
-    // (reset the clear color the bloom pass changed, so the canvas clears transparent-white)
-    camera.layers.set(0);
-    renderer.setRenderTarget(null);
-    renderer.setClearColor(0xffffff, 0);
-    renderer.autoClear = true;
-    renderer.render(scene, camera);
-    // pass 3: add the confined screen glow on top
-    renderer.autoClear = false;
-    renderer.render(glowScene, glowCam);
-    renderer.autoClear = true;
-  }
-
-  let rafId = 0;
-  function scheduleRender() {
-    if (!ready || !visible || document.hidden || disposed) return;
-    if (rafId) return;
-    rafId = requestAnimationFrame(() => { rafId = 0; renderFrame(); });
-  }
-
+  /* ---------- pose from scroll progress ---------- */
   function applyPose(p) {
     const enter = easeOutCubic(seg(p, 0.0, 0.18));
     const open = easeInOutCubic(seg(p, 0.18, 0.52));
     const close = easeInOutCubic(seg(p, 0.68, 1.0));
 
     const lidOpen = p < 0.52 ? open : p < 0.68 ? 1 : 1 - close;
-    const dolly = lidOpen;   // camera pushes in with the open amount
 
     let reveal = easeOutCubic(clamp01((lidOpen - 0.62) / (1 - 0.62)));
     if (p > 0.68) reveal *= 1 - easeInOutCubic(seg(p, 0.72, 0.92));  // dark before it folds shut
@@ -416,7 +423,7 @@
     pose.riseY = -(1 - enter) * 0.14;
     pose.appear = enter;
     pose.lidOpen = lidOpen;
-    pose.dolly = dolly;
+    pose.dolly = lidOpen;
     pose.reveal = reveal;
     pose.veil = Math.max(1 - enter, easeInOutCubic(seg(p, 0.95, 1.0)));
 
@@ -428,7 +435,72 @@
       if (p > 0.012) hint.classList.add("is-hidden");
       else hint.classList.remove("is-hidden");
     }
-    scheduleRender();
+  }
+
+  /* ---------- draw one frame (pose + idle + parallax + render) ---------- */
+  function renderFrame(t) {
+    if (!ready || disposed) return;
+    const P = pose;
+
+    // subtle life: idle float + micro rotation, scaled by how open it is
+    const idleY = Math.sin(t * 0.9) * 0.015 * P.lidOpen;
+    const idleRot = Math.sin(t * 0.6) * 0.012 * P.lidOpen;
+
+    laptopGroup.scale.setScalar(P.appearScale);
+    laptopGroup.position.set(0, P.riseY + idleY, 0);
+    laptopGroup.rotation.y = lerp(YAW_CLOSED, YAW_OPEN, P.lidOpen) + ptr.x * 0.09 + idleRot;
+    laptopGroup.rotation.x = ptr.y * -0.045;
+    laptopGroup.rotation.z = idleRot * 0.35;
+    lidPivot.rotation.x = LID_CLOSED + (LID_OPEN - LID_CLOSED) * P.lidOpen;
+
+    const d = fitDist * (1 - 0.08 * P.dolly);
+    camera.position.copy(camDir).multiplyScalar(d).add(target);
+    camera.lookAt(target);
+
+    if (textureReady) {
+      const breathe = 1 + 0.05 * Math.sin(t * 1.4);
+      screenMat.opacity = P.reveal;
+      screenMat.emissiveIntensity = P.reveal * 0.62 * breathe;
+    }
+    panelMat.emissiveIntensity = 0.04 + P.reveal * 0.05;
+    bloom.strength = P.reveal * 0.22;
+    groundMat.opacity = 0.32 * P.appear * (0.5 + 0.5 * P.lidOpen);
+
+    rimLight.intensity = 1.0 + 0.5 * P.lidOpen;
+    keyLight.intensity = 2.0 + 0.3 * P.lidOpen;
+
+    veil.style.opacity = P.veil.toFixed(3);
+
+    // pass 1: isolated wordmark glow → bloom target (black bg)
+    camera.layers.set(BLOOM_LAYER);
+    bloomComposer.render();
+    // pass 2: full scene straight to the transparent canvas → studio backdrop shows through
+    // (reset the clear colour the bloom pass changed so the canvas clears transparent)
+    camera.layers.set(0);
+    renderer.setRenderTarget(null);
+    renderer.setClearColor(0xffffff, 0);
+    renderer.autoClear = true;
+    renderer.render(scene, camera);
+    // pass 3: add the confined screen glow (RGB only) on top
+    renderer.autoClear = false;
+    renderer.render(glowScene, glowCam);
+    renderer.autoClear = true;
+  }
+
+  /* ---------- continuous animation loop (while visible) ---------- */
+  function frame() {
+    if (!running || disposed) return;
+    applyPose(scrollP);
+    ptr.x += (ptrTarget.x - ptr.x) * 0.06;      // damp parallax toward the pointer
+    ptr.y += (ptrTarget.y - ptr.y) * 0.06;
+    renderFrame(clock.getElapsedTime());
+  }
+  function startLoop() { if (running || !ready) return; running = true; renderer.setAnimationLoop(frame); }
+  function stopLoop() { if (!running) return; running = false; renderer.setAnimationLoop(null); }
+
+  function onPointerMove(e) {
+    ptrTarget.x = (e.clientX / window.innerWidth) * 2 - 1;
+    ptrTarget.y = (e.clientY / window.innerHeight) * 2 - 1;
   }
 
   /* ---------- wordmark texture (key out the dark background → clean glow) ---------- */
@@ -456,26 +528,22 @@
         screenMat.emissiveMap = tex;
         screenMat.needsUpdate = true;
         textureReady = true;
-        scheduleRender();
+        if (!running) renderFrame(clock.getElapsedTime());
       } catch (e) { /* leave the screen dark on any failure */ }
     };
     img.src = "assets/nerve-media-logo.png";
   }
 
-  /* ---------- scroll rig (preserved) ---------- */
+  /* ---------- scroll rig ---------- */
   let trackTop = 0, scrollRange = 1;
   function cacheMetrics() {
     const r = track.getBoundingClientRect();
     trackTop = r.top + (window.pageYOffset || 0);
     scrollRange = Math.max(1, track.offsetHeight - window.innerHeight);
   }
-  let ticking = false;
-  function update() {
-    ticking = false;
-    const y = window.pageYOffset || 0;
-    applyPose(clamp01((y - trackTop) / scrollRange));
+  function onScroll() {
+    scrollP = clamp01(((window.pageYOffset || 0) - trackTop) / scrollRange);
   }
-  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
 
   let resizePending = false;
   function onResize() {
@@ -492,14 +560,16 @@
     camera.updateProjectionMatrix();
     computeFit();
     cacheMetrics();
-    scheduleRender();
+    onScroll();
+    if (!running) renderFrame(clock.getElapsedTime());
   }
 
   function observeVisibility() {
     if (!("IntersectionObserver" in window)) { visible = true; return; }
     const io = new IntersectionObserver((entries) => {
       visible = entries[0].isIntersecting;
-      if (visible) scheduleRender();
+      if (support.reduce) { if (visible) renderFrame(clock.getElapsedTime()); return; }
+      if (visible && !document.hidden) startLoop(); else stopLoop();
     }, { threshold: 0 });
     io.observe(stage);
   }
@@ -516,19 +586,27 @@
     resize();
     loadLogo();
     observeVisibility();
-    document.addEventListener("visibilitychange", () => { if (!document.hidden) scheduleRender(); });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stopLoop();
+      else if (visible && !support.reduce) startLoop();
+    });
 
     if (support.reduce) {
       html.classList.add("is-static");
+      scrollP = 0.6;
       applyPose(0.6);              // a settled, fully-open frame
       visible = true;
-      renderFrame();
+      renderFrame(0);
     } else {
       cacheMetrics();
+      onScroll();
       window.addEventListener("scroll", onScroll, { passive: true });
       window.addEventListener("resize", onResize);
       window.addEventListener("orientationchange", onResize);
-      update();
+      if (window.matchMedia && matchMedia("(pointer: fine)").matches) {
+        window.addEventListener("pointermove", onPointerMove, { passive: true });
+      }
+      startLoop();
     }
   }
 
